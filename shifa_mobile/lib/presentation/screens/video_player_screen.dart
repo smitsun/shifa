@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gesture.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
@@ -182,6 +183,70 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
+  Widget _buildDescriptionText(String text, ThemeData theme) {
+    final urlRegex = RegExp(
+      r'(https?:\/\/[^\s]+)',
+      caseSensitive: false,
+    );
+
+    final matches = urlRegex.allMatches(text);
+    if (matches.isEmpty) {
+      return Text(
+        text,
+        style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12, height: 1.4),
+      );
+    }
+
+    final List<InlineSpan> spans = [];
+    int lastMatchEnd = 0;
+
+    for (final match in matches) {
+      if (match.start > lastMatchEnd) {
+        spans.add(TextSpan(
+          text: text.substring(lastMatchEnd, match.start),
+          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12, height: 1.4),
+        ));
+      }
+
+      final url = match.group(0)!;
+      spans.add(TextSpan(
+        text: url,
+        style: TextStyle(
+          fontSize: 12,
+          color: theme.colorScheme.primary,
+          decoration: TextDecoration.underline,
+          fontWeight: FontWeight.w600,
+        ),
+        recognizer: TapGestureRecognizer()
+          ..onTap = () {
+            Clipboard.setData(ClipboardData(text: url));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Copied link: $url'),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+      ));
+
+      lastMatchEnd = match.end;
+    }
+
+    if (lastMatchEnd < text.length) {
+      spans.add(TextSpan(
+        text: text.substring(lastMatchEnd),
+        style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12, height: 1.4),
+      ));
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: DefaultTextStyle.of(context).style,
+        children: spans,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -240,10 +305,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                           style: theme.textTheme.titleMedium?.copyWith(fontSize: 16),
                         ),
                         const SizedBox(height: 6),
-                        Text(
-                          widget.video.description,
-                          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
-                        ),
+                        _buildDescriptionText(widget.video.description, theme),
                         const SizedBox(height: 12),
 
                         // Actions bar
