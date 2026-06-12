@@ -335,7 +335,11 @@ export default function App() {
             <div>
               {/* Analytics Metric Cards */}
               <div className="analytics-grid">
-                <div className="analytics-card" style={{ '--accent-color': '#4f46e5' } as React.CSSProperties}>
+                <div 
+                  className="analytics-card" 
+                  style={{ '--accent-color': '#4f46e5', cursor: 'pointer' } as React.CSSProperties}
+                  onClick={() => setActiveTab('subjects')}
+                >
                   <div className="card-icon-wrapper">
                     <BookOpen size={24} />
                   </div>
@@ -345,7 +349,11 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="analytics-card" style={{ '--accent-color': '#06b6d4' } as React.CSSProperties}>
+                <div 
+                  className="analytics-card" 
+                  style={{ '--accent-color': '#06b6d4', cursor: 'pointer' } as React.CSSProperties}
+                  onClick={() => setActiveTab('chapters')}
+                >
                   <div className="card-icon-wrapper">
                     <Layers size={24} />
                   </div>
@@ -355,7 +363,11 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="analytics-card" style={{ '--accent-color': '#10b981' } as React.CSSProperties}>
+                <div 
+                  className="analytics-card" 
+                  style={{ '--accent-color': '#10b981', cursor: 'pointer' } as React.CSSProperties}
+                  onClick={() => setActiveTab('videos')}
+                >
                   <div className="card-icon-wrapper">
                     <Film size={24} />
                   </div>
@@ -365,7 +377,11 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="analytics-card" style={{ '--accent-color': '#f59e0b' } as React.CSSProperties}>
+                <div 
+                  className="analytics-card" 
+                  style={{ '--accent-color': '#f59e0b', cursor: 'pointer' } as React.CSSProperties}
+                  onClick={() => setActiveTab('users')}
+                >
                   <div className="card-icon-wrapper">
                     <Users size={24} />
                   </div>
@@ -995,9 +1011,17 @@ export default function App() {
                         id="vidSubjectSelect"
                         className="form-control" 
                         required
-                        disabled
+                        disabled={modalAction === 'edit'}
                         value={videoForm.subjectId}
-                        onChange={(e) => setVideoForm({ ...videoForm, subjectId: e.target.value })}
+                        onChange={(e) => {
+                          const subId = e.target.value;
+                          const filteredChaps = chapters.filter(c => c.subjectId === subId);
+                          setVideoForm({
+                            ...videoForm,
+                            subjectId: subId,
+                            chapterId: filteredChaps.length > 0 ? filteredChaps[0].id : ''
+                          });
+                        }}
                       >
                         {subjects.map(s => (
                           <option key={s.id} value={s.id}>{s.title}</option>
@@ -1010,13 +1034,16 @@ export default function App() {
                         id="vidChapterSelect"
                         className="form-control" 
                         required
-                        disabled
+                        disabled={modalAction === 'edit'}
                         value={videoForm.chapterId}
                         onChange={(e) => setVideoForm({ ...videoForm, chapterId: e.target.value })}
                       >
-                        {chapters.map(c => (
+                        {chapters.filter(c => c.subjectId === videoForm.subjectId).map(c => (
                           <option key={c.id} value={c.id}>{c.title}</option>
                         ))}
+                        {chapters.filter(c => c.subjectId === videoForm.subjectId).length === 0 && (
+                          <option value="">No chapters available</option>
+                        )}
                       </select>
                     </div>
                     <div className="form-group">

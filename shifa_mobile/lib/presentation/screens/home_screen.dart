@@ -5,6 +5,7 @@ import '../../core/theme/app_theme.dart';
 import '../providers/providers.dart';
 import '../widgets/glass_card.dart';
 import 'subject_detail_screen.dart';
+import 'video_player_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -424,7 +425,15 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                       ),
                       trailing: const Icon(Icons.chevron_right_rounded),
                       onTap: () {
-                        // Open player directly
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => VideoPlayerScreen(
+                              video: vid,
+                              playlist: [vid],
+                            ),
+                          ),
+                        );
                       },
                     );
                   },
@@ -487,6 +496,37 @@ class _BookmarksTab extends ConsumerWidget {
                       ref.refresh(bookmarksProvider);
                     },
                   ),
+                  onTap: () async {
+                    if (b.itemType == 'video') {
+                      final repo = ref.read(learningRepositoryProvider);
+                      showDialog(
+                        context: context,
+                        barrierDismissible: false,
+                        builder: (context) => const Center(child: CircularProgressIndicator()),
+                      );
+                      
+                      final video = await repo.getVideoById(b.itemId);
+                      
+                      if (context.mounted) {
+                        Navigator.pop(context); // Dismiss loading spinner
+                        if (video != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => VideoPlayerScreen(
+                                video: video,
+                                playlist: [video],
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Failed to load video details.')),
+                          );
+                        }
+                      }
+                    }
+                  },
                 ),
               );
             },

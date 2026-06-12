@@ -70,6 +70,11 @@ class LearningRepositoryImpl implements LearningRepository {
     return await dbHelper.searchCachedVideos(query);
   }
 
+  @override
+  Future<Video?> getVideoById(String videoId) async {
+    return await dbHelper.getCachedVideoById(videoId);
+  }
+
   // --- Progress Tracking ---
   @override
   Future<VideoProgress?> getProgress(String videoId) async {

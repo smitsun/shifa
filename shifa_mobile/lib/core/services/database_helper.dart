@@ -147,6 +147,13 @@ class DatabaseHelper {
     return maps.map((m) => VideoModel.fromMap(m)).toList();
   }
 
+  Future<VideoModel?> getCachedVideoById(String videoId) async {
+    final db = await database;
+    final maps = await db.query('videos', where: 'id = ?', whereArgs: [videoId]);
+    if (maps.isEmpty) return null;
+    return VideoModel.fromMap(maps.first);
+  }
+
   Future<List<VideoModel>> searchCachedVideos(String query) async {
     final db = await database;
     final maps = await db.query(
