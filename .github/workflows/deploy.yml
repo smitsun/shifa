@@ -1,0 +1,43 @@
+name: Deploy Web Admin to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'shifa_admin/**'
+      - '.github/workflows/deploy.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    concurrency: ci-${{ github.ref }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: shifa_admin/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd shifa_admin
+          npm ci
+
+      - name: Build Dashboard
+        run: |
+          cd shifa_admin
+          npm run build
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: shifa_admin/dist
+          branch: gh-pages
