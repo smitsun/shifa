@@ -11,6 +11,7 @@ dist/
 build/
 *.apk
 *.ipa
+*.pdf
 
 # System files
 .DS_Store
