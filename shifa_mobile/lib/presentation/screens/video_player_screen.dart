@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import '../../core/theme/app_theme.dart';
 import '../../domain/entities/entities.dart';
 import '../providers/providers.dart';
+import '../widgets/glass_card.dart';
 
 class VideoPlayerScreen extends ConsumerStatefulWidget {
   final Video video;
@@ -183,6 +185,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return YoutubePlayerBuilder(
       onExitFullScreen: () {
@@ -206,103 +209,119 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         },
       ),
       builder: (context, player) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Lecture Video Player'),
-          ),
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Interactive Video Player widget
-              player,
+        return Container(
+          decoration: isDark 
+              ? AppTheme.darkPageBackgroundDecoration 
+              : AppTheme.pageBackgroundDecoration,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            appBar: AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              title: const Text('Lecture Video Player'),
+            ),
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Interactive Video Player widget
+                player,
 
-              // Video Metadata & Controls
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.video.title,
-                      style: theme.textTheme.titleMedium?.copyWith(fontSize: 16),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      widget.video.description,
-                      style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
-                    ),
-                    const SizedBox(height: 12),
-
-                    // Actions bar
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Video Metadata & Controls (GlassCard)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                  child: GlassCard(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Bookmark button
-                        TextButton.icon(
-                          onPressed: _toggleBookmark,
-                          icon: Icon(
-                            _isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
-                            size: 18,
-                          ),
-                          label: Text(_isBookmarked ? 'Bookmarked' : 'Bookmark', style: const TextStyle(fontSize: 13)),
+                        Text(
+                          widget.video.title,
+                          style: theme.textTheme.titleMedium?.copyWith(fontSize: 16),
                         ),
-
-                        // Share button
-                        TextButton.icon(
-                          onPressed: () {
-                            Share.share(
-                              'Watch this medical lecture: ${widget.video.title}\nLink: ${widget.video.youtubeUrl}',
-                            );
-                          },
-                          icon: const Icon(Icons.share_rounded, size: 18),
-                          label: const Text('Share Link', style: TextStyle(fontSize: 13)),
+                        const SizedBox(height: 6),
+                        Text(
+                          widget.video.description,
+                          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 12),
                         ),
+                        const SizedBox(height: 12),
 
-                        // Play Next Trigger
-                        IconButton(
-                          onPressed: _playNextVideo,
-                          icon: const Icon(Icons.skip_next_rounded),
-                          tooltip: 'Play Next Video',
-                        )
+                        // Actions bar
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Bookmark button
+                            TextButton.icon(
+                              onPressed: _toggleBookmark,
+                              icon: Icon(
+                                _isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+                                size: 18,
+                              ),
+                              label: Text(_isBookmarked ? 'Bookmarked' : 'Bookmark', style: const TextStyle(fontSize: 13)),
+                            ),
+
+                            // Share button
+                            TextButton.icon(
+                              onPressed: () {
+                                Share.share(
+                                  'Watch this medical lecture: ${widget.video.title}\nLink: ${widget.video.youtubeUrl}',
+                                );
+                              },
+                              icon: const Icon(Icons.share_rounded, size: 18),
+                              label: const Text('Share Link', style: TextStyle(fontSize: 13)),
+                            ),
+
+                            // Play Next Trigger
+                            IconButton(
+                              onPressed: _playNextVideo,
+                              icon: const Icon(Icons.skip_next_rounded),
+                              tooltip: 'Play Next Video',
+                            )
+                          ],
+                        ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
 
-              const Divider(height: 1),
-
-              // Interactive Notes & Playlist section (Tabs)
-              Expanded(
-                child: DefaultTabController(
-                  length: 2,
-                  child: Column(
-                    children: [
-                      TabBar(
-                        labelColor: theme.colorScheme.primary,
-                        unselectedLabelColor: theme.colorScheme.onBackground.withOpacity(0.6),
-                        indicatorColor: theme.colorScheme.primary,
-                        tabs: const [
-                          Tab(icon: Icon(Icons.note_alt_outlined), text: 'Personal Notes'),
-                          Tab(icon: Icon(Icons.playlist_play_rounded), text: 'Chapter Lectures'),
-                        ],
-                      ),
-                      Expanded(
-                        child: TabBarView(
+                // Interactive Notes & Playlist section (Tabs inside a GlassCard)
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 16.0, right: 16.0, bottom: 20.0),
+                    child: GlassCard(
+                      padding: EdgeInsets.zero,
+                      child: DefaultTabController(
+                        length: 2,
+                        child: Column(
                           children: [
-                            // 1. NOTES TAB
-                            _buildNotesTab(theme),
+                            TabBar(
+                              labelColor: theme.colorScheme.primary,
+                              unselectedLabelColor: theme.colorScheme.onBackground.withOpacity(0.6),
+                              indicatorColor: theme.colorScheme.primary,
+                              tabs: const [
+                                Tab(icon: Icon(Icons.note_alt_outlined), text: 'Personal Notes'),
+                                Tab(icon: Icon(Icons.playlist_play_rounded), text: 'Chapter Lectures'),
+                              ],
+                            ),
+                            Expanded(
+                              child: TabBarView(
+                                children: [
+                                  // 1. NOTES TAB
+                                  _buildNotesTab(theme),
 
-                            // 2. PLAYLIST TAB
-                            _buildPlaylistTab(theme),
+                                  // 2. PLAYLIST TAB
+                                  _buildPlaylistTab(theme),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              )
-            ],
+                )
+              ],
+            ),
           ),
         );
       },

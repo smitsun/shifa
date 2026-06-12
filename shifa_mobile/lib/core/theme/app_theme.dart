@@ -13,6 +13,35 @@ class AppTheme {
   static const Color bgDark = Color(0xFF090D16);          // Dark Navy/Slate
   static const Color cardDark = Color(0xFF111827);        // Deep Grey
 
+  // Apple OS style mesh background gradients
+  static BoxDecoration get pageBackgroundDecoration {
+    return const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          Color(0xFFEEF2F6), // Very light soft blue
+          Color(0xFFE2E8F0), // Soft slate
+          Color(0xFFEEF2FF), // Soft indigo hue
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    );
+  }
+
+  static BoxDecoration get darkPageBackgroundDecoration {
+    return const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [
+          Color(0xFF0B0F19), // Deep dark space blue
+          Color(0xFF1A1A2F), // Muted dark indigo
+          Color(0xFF090B11), // Deepest dark slate
+        ],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    );
+  }
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

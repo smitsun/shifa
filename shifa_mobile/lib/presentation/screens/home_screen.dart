@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/theme/app_theme.dart';
 import '../providers/providers.dart';
+import '../widgets/glass_card.dart';
 import 'subject_detail_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -18,6 +20,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authStateProvider);
     final user = authState.value;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     final List<Widget> tabs = [
       const _DashboardTab(),
@@ -26,78 +30,101 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       const _ProfileTab(),
     ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.black12, width: 0.5),
+    return Container(
+      decoration: isDark 
+          ? AppTheme.darkPageBackgroundDecoration 
+          : AppTheme.pageBackgroundDecoration,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true, // Allows list content to scroll under floating glass bottom bar
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.black12, width: 0.5),
+                ),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  height: 24,
+                  width: 24,
+                  fit: BoxFit.contain,
+                ),
               ),
-              child: Image.asset(
-                'assets/images/logo.png',
-                height: 24,
-                width: 24,
-                fit: BoxFit.contain,
+              const SizedBox(width: 10),
+              Text(
+                _currentIndex == 0
+                    ? 'Shifa Care'
+                    : (_currentIndex == 1
+                        ? 'Search Library'
+                        : (_currentIndex == 2 ? 'Bookmarks' : 'Student Profile')),
+                style: theme.textTheme.titleLarge?.copyWith(fontSize: 18),
               ),
-            ),
-            const SizedBox(width: 10),
-            Text(
-              _currentIndex == 0
-                  ? 'Shifa Care'
-                  : (_currentIndex == 1
-                      ? 'Search Library'
-                      : (_currentIndex == 2 ? 'Bookmarks' : 'Student Profile')),
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
-            ),
+            ],
+          ),
+          actions: [
+            if (_currentIndex == 0 && user != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 16.0),
+                child: Chip(
+                  avatar: const Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: 16),
+                  label: Text(
+                    '${user.streak} Days',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                  ),
+                  backgroundColor: Colors.orange.withOpacity(0.1),
+                  side: BorderSide.none,
+                  padding: EdgeInsets.zero,
+                ),
+              ),
           ],
         ),
-        actions: [
-          if (_currentIndex == 0 && user != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: Chip(
-                avatar: const Icon(Icons.local_fire_department_rounded, color: Colors.orange, size: 16),
-                label: Text(
-                  '${user.streak} Days',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                ),
-                backgroundColor: Colors.orange.withOpacity(0.1),
-                side: BorderSide.none,
-                padding: EdgeInsets.zero,
+        body: tabs[_currentIndex],
+        bottomNavigationBar: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            child: GlassCard(
+              padding: EdgeInsets.zero,
+              borderRadius: 24,
+              blur: 20,
+              child: NavigationBar(
+                selectedIndex: _currentIndex,
+                onDestinationSelected: (index) => setState(() => _currentIndex = index),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                indicatorColor: theme.colorScheme.primary.withOpacity(0.15),
+                destinations: const [
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    selectedIcon: Icon(Icons.home_rounded),
+                    label: 'Home',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.search_rounded),
+                    selectedIcon: Icon(Icons.search_rounded),
+                    label: 'Search',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.bookmark_outline_rounded),
+                    selectedIcon: Icon(Icons.bookmark_rounded),
+                    label: 'Bookmarks',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.person_outline_rounded),
+                    selectedIcon: Icon(Icons.person_rounded),
+                    label: 'Profile',
+                  ),
+                ],
               ),
             ),
-        ],
-      ),
-      body: tabs[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: 'Home',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.search_rounded),
-            selectedIcon: Icon(Icons.search_rounded),
-            label: 'Search',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bookmark_outline_rounded),
-            selectedIcon: Icon(Icons.bookmark_rounded),
-            label: 'Bookmarks',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: 'Profile',
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -113,11 +140,12 @@ class _DashboardTab extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
     final user = authState.value;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return RefreshIndicator(
       onRefresh: () => ref.refresh(subjectsProvider.future),
       child: ListView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.only(left: 20.0, right: 20.0, top: 16.0, bottom: 120.0),
         children: [
           // Greeting Banner
           Text(
@@ -127,52 +155,52 @@ class _DashboardTab extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             'What medical subjects would you like to review today?',
-            style: theme.textTheme.bodyMedium,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: isDark ? Colors.white70 : Colors.black80,
+            ),
           ),
           const SizedBox(height: 24),
 
-          // Quick learning stats
+          // Quick learning stats (GlassCard)
           if (user != null) ...[
-            Container(
+            GlassCard(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [theme.colorScheme.primary, theme.colorScheme.primary.withOpacity(0.8)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: theme.colorScheme.primary.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ],
-              ),
+              color: isDark ? Colors.white.withOpacity(0.08) : Colors.indigo.withOpacity(0.08),
+              borderColor: isDark ? Colors.white.withOpacity(0.15) : Colors.indigo.withOpacity(0.2),
               child: Row(
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'YOUR PROGRESS',
-                          style: TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+                          style: TextStyle(
+                            color: isDark ? Colors.white70 : Colors.indigo.shade800,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           '${user.totalVideosWatched} Lectures Completed',
-                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: isDark ? Colors.white : Colors.indigo.shade900,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 12),
                         // Linear indicator
                         ClipRRect(
                           borderRadius: BorderRadius.circular(4),
-                          child: const LinearProgressIndicator(
+                          child: LinearProgressIndicator(
                             value: 0.35, // Demo progress percentage
-                            backgroundColor: Colors.white24,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            backgroundColor: isDark ? Colors.white24 : Colors.indigo.withOpacity(0.15),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              isDark ? Colors.white : theme.colorScheme.primary,
+                            ),
                             minHeight: 6,
                           ),
                         ),
@@ -183,13 +211,13 @@ class _DashboardTab extends ConsumerWidget {
                   Container(
                     width: 50,
                     height: 50,
-                    decoration: const BoxDecoration(
-                      color: Colors.white24,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white12 : theme.colorScheme.primary.withOpacity(0.15),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.emoji_events_rounded,
-                      color: Colors.white,
+                      color: isDark ? Colors.white : theme.colorScheme.primary,
                       size: 28,
                     ),
                   )
@@ -236,24 +264,30 @@ class _DashboardTab extends ConsumerWidget {
                         ),
                       );
                     },
-                    child: Card(
-                      clipBehavior: Clip.antiAlias,
+                    child: GlassCard(
+                      padding: EdgeInsets.zero,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(
-                            child: CachedNetworkImage(
-                              imageUrl: sub.thumbnailUrl,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: theme.colorScheme.surfaceVariant,
-                                child: const Center(
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                ),
+                            child: ClipRRect(
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
                               ),
-                              errorWidget: (context, url, error) => Container(
-                                color: theme.colorScheme.surfaceVariant,
-                                child: Icon(Icons.book_rounded, color: theme.colorScheme.primary),
+                              child: CachedNetworkImage(
+                                imageUrl: sub.thumbnailUrl,
+                                fit: BoxFit.cover,
+                                placeholder: (context, url) => Container(
+                                  color: theme.colorScheme.surfaceVariant.withOpacity(0.1),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: theme.colorScheme.surfaceVariant.withOpacity(0.1),
+                                  child: Icon(Icons.book_rounded, color: theme.colorScheme.primary),
+                                ),
                               ),
                             ),
                           ),
@@ -364,6 +398,7 @@ class _SearchTabState extends ConsumerState<_SearchTab> {
                 }
 
                 return ListView.separated(
+                  padding: const EdgeInsets.only(bottom: 120),
                   itemCount: videos.length,
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, index) {
@@ -432,13 +467,14 @@ class _BookmarksTab extends ConsumerWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 120),
             itemCount: bookmarks.length,
             itemBuilder: (context, index) {
               final b = bookmarks[index];
-              return Card(
+              return GlassCard(
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
+                  contentPadding: EdgeInsets.zero,
                   title: Text(
                     b.itemId.replaceAll('_', ' ').toUpperCase(),
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
@@ -472,6 +508,7 @@ class _ProfileTab extends ConsumerWidget {
     final authState = ref.watch(authStateProvider);
     final user = authState.value;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     if (user == null) {
       return Center(
@@ -483,10 +520,10 @@ class _ProfileTab extends ConsumerWidget {
     }
 
     return ListView(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.only(left: 24.0, right: 24.0, top: 24.0, bottom: 120.0),
       children: [
-        // Profile Info
-        Center(
+        // Profile Info (GlassCard)
+        GlassCard(
           child: Column(
             children: [
               CircleAvatar(
@@ -502,7 +539,7 @@ class _ProfileTab extends ConsumerWidget {
               Text(user.displayName, style: theme.textTheme.titleMedium?.copyWith(fontSize: 20)),
               const SizedBox(height: 4),
               Text(user.email, style: theme.textTheme.bodyMedium),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               Chip(
                 label: Text(
                   user.role.toUpperCase(),
@@ -514,13 +551,14 @@ class _ProfileTab extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 40),
+        const SizedBox(height: 28),
 
         Text('System Settings', style: theme.textTheme.titleMedium),
         const SizedBox(height: 12),
         
-        // Settings triggers
-        Card(
+        // Settings triggers (GlassCard)
+        GlassCard(
+          padding: EdgeInsets.zero,
           child: Column(
             children: [
               ListTile(
@@ -553,13 +591,13 @@ class _ProfileTab extends ConsumerWidget {
         ElevatedButton.icon(
           onPressed: () => ref.read(authStateProvider.notifier).logout(),
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red.shade50,
+            backgroundColor: Colors.red.shade50.withOpacity(isDark ? 0.08 : 0.8),
             foregroundColor: Colors.red,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.red.shade100),
+              side: BorderSide(color: Colors.red.shade100.withOpacity(0.3)),
             ),
           ),
           icon: const Icon(Icons.logout_rounded),
