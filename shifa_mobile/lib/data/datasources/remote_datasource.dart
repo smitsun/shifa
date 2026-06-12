@@ -185,12 +185,13 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     if (email.contains('error')) {
       throw Exception('Authentication failed. User not found.');
     }
+    final isAdminUser = email.toLowerCase().contains('admin');
     return UserModel(
       uid: 'user_mock_123',
       email: email,
       displayName: email.split('@').first,
       photoUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-      role: 'student',
+      role: isAdminUser ? 'admin' : 'student',
       createdAt: DateTime.now().subtract(const Duration(days: 10)),
       lastActiveDate: DateTime.now(),
       streak: 5,
@@ -203,12 +204,13 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   @override
   Future<UserModel> signup(String email, String password, String name) async {
     await Future.delayed(const Duration(seconds: 1));
+    final isAdminUser = email.toLowerCase().contains('admin');
     return UserModel(
       uid: 'user_mock_456',
       email: email,
       displayName: name,
       photoUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
-      role: 'student',
+      role: isAdminUser ? 'admin' : 'student',
       createdAt: DateTime.now(),
       lastActiveDate: DateTime.now(),
       streak: 1,
