@@ -156,7 +156,7 @@ class _DashboardTab extends ConsumerWidget {
           Text(
             'What medical subjects would you like to review today?',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: isDark ? Colors.white70 : Colors.black80,
+              color: isDark ? Colors.white70 : Colors.black87,
             ),
           ),
           const SizedBox(height: 24),

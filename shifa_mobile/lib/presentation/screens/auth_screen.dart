@@ -135,7 +135,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                               ? 'Recover your account password'
                               : (_isSignUp ? 'Create a student profile' : 'Healthcare lecture learning platform'),
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: isDark ? Colors.white70 : Colors.black80,
+                            color: isDark ? Colors.white70 : Colors.black87,
                           ),
                           textAlign: TextAlign.center,
                         ),
