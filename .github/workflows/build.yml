@@ -34,6 +34,12 @@ jobs:
           channel: 'stable'
           cache: true
 
+      # 3.5 Generate platform boilerplate
+      - name: Create platform boilerplate
+        run: |
+          cd shifa_mobile
+          flutter create --org com.shifa --project-name shifa_mobile .
+
       # 4. Get dependencies for mobile app
       - name: Install dependencies
         run: |
