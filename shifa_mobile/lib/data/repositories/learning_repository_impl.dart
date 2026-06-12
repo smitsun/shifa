@@ -75,6 +75,21 @@ class LearningRepositoryImpl implements LearningRepository {
     return await dbHelper.getCachedVideoById(videoId);
   }
 
+  @override
+  Future<List<LectureDeck>> getLectureDecks({bool forceRefresh = false}) async {
+    if (await networkInfo.isConnected) {
+      try {
+        final remote = await remoteDataSource.getLectureDecks();
+        await dbHelper.cacheLectureDecks(remote);
+        return remote;
+      } catch (_) {
+        return await dbHelper.getCachedLectureDecks();
+      }
+    } else {
+      return await dbHelper.getCachedLectureDecks();
+    }
+  }
+
   // --- Progress Tracking ---
   @override
   Future<VideoProgress?> getProgress(String videoId) async {

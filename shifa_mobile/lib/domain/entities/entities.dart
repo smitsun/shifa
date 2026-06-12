@@ -77,6 +77,7 @@ class Video {
   final String duration;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final List<VideoJumpPoint> jumpPoints;
 
   Video({
     required this.id,
@@ -89,6 +90,7 @@ class Video {
     required this.duration,
     required this.createdAt,
     required this.updatedAt,
+    this.jumpPoints = const [],
   });
 
   String get youtubeId {
@@ -150,5 +152,33 @@ class Bookmark {
     required this.itemId,
     required this.itemType,
     required this.bookmarkedAt,
+  });
+}
+
+class VideoJumpPoint {
+  final String label;
+  final int timestamp; // in seconds
+
+  VideoJumpPoint({
+    required this.label,
+    required this.timestamp,
+  });
+}
+
+class LectureDeck {
+  final String id;
+  final String title;
+  final String description;
+  final String subjectId;
+  final List<String> videoIds;
+  final DateTime createdAt;
+
+  LectureDeck({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.subjectId,
+    required this.videoIds,
+    required this.createdAt,
   });
 }

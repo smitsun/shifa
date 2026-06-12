@@ -20,9 +20,23 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
+  }
+
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('DROP TABLE IF EXISTS subjects');
+      await db.execute('DROP TABLE IF EXISTS chapters');
+      await db.execute('DROP TABLE IF EXISTS videos');
+      await db.execute('DROP TABLE IF EXISTS progress');
+      await db.execute('DROP TABLE IF EXISTS bookmarks');
+      await db.execute('DROP TABLE IF EXISTS notes');
+      await db.execute('DROP TABLE IF EXISTS lecture_decks');
+      await _createDB(db, newVersion);
+    }
   }
 
   Future<void> _createDB(Database db, int version) async {
@@ -60,7 +74,8 @@ class DatabaseHelper {
         thumbnailUrl TEXT,
         duration TEXT,
         createdAt TEXT,
-        updatedAt TEXT
+        updatedAt TEXT,
+        jumpPoints TEXT
       )
     ''');
 
@@ -94,6 +109,17 @@ class DatabaseHelper {
         videoId TEXT,
         noteText TEXT,
         timestampInSeconds INTEGER,
+        createdAt TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE lecture_decks (
+        id TEXT PRIMARY KEY,
+        title TEXT,
+        description TEXT,
+        subjectId TEXT,
+        videoIds TEXT,
         createdAt TEXT
       )
     ''');
@@ -235,5 +261,21 @@ class DatabaseHelper {
       orderBy: 'timestampInSeconds ASC',
     );
     return maps.map((m) => VideoNoteModel.fromMap(m)).toList();
+  }
+
+  // --- Lecture Decks (Playlists) ---
+  Future<void> cacheLectureDecks(List<LectureDeckModel> decks) async {
+    final db = await database;
+    final batch = db.batch();
+    for (var d in decks) {
+      batch.insert('lecture_decks', d.toMap(), conflictAlgorithm: ConflictAlgorithm.replace);
+    }
+    await batch.commit(noResult: true);
+  }
+
+  Future<List<LectureDeckModel>> getCachedLectureDecks() async {
+    final db = await database;
+    final maps = await db.query('lecture_decks');
+    return maps.map((m) => LectureDeckModel.fromMap(m)).toList();
   }
 }

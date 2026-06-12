@@ -15,16 +15,17 @@ import {
   Play,
   TrendingUp,
   Clock,
-  Sparkles
+  Sparkles,
+  List
 } from 'lucide-react';
 import { dbAPI } from './services/db';
-import type { Subject, Chapter, Video, UserProfile } from './services/mockData';
+import type { Subject, Chapter, Video, UserProfile, LectureDeck } from './services/mockData';
 
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return (localStorage.getItem('shifa_admin_theme') as 'light' | 'dark') || 'dark';
   });
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'subjects' | 'chapters' | 'videos' | 'users'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'subjects' | 'chapters' | 'videos' | 'users' | 'lectureDecks'>('dashboard');
   const [previewVideoId, setPreviewVideoId] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
   
@@ -33,11 +34,27 @@ export default function App() {
     const match = url.match(regex);
     return (match && match[1]) ? match[1] : '';
   };
+
+  // Timestamp format conversions
+  const timeToSeconds = (timeStr: string): number => {
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      return parts[0] * 60 + parts[1];
+    }
+    return Number(timeStr) || 0;
+  };
+
+  const secondsToTime = (secs: number): string => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
   
   // Data State
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [videos, setVideos] = useState<Video[]>([]);
+  const [lectureDecks, setLectureDecks] = useState<LectureDeck[]>([]);
   const [users, setUsers] = useState<UserProfile[]>([]);
   
   // Filtering & Dropdown State
@@ -47,14 +64,23 @@ export default function App() {
   
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState<'subject' | 'chapter' | 'video' | null>(null);
+  const [modalType, setModalType] = useState<'subject' | 'chapter' | 'video' | 'lectureDeck' | null>(null);
   const [modalAction, setModalAction] = useState<'add' | 'edit'>('add');
   
   // Form State
   const [editId, setEditId] = useState<string>('');
   const [subjectForm, setSubjectForm] = useState({ id: '', title: '', description: '', thumbnailUrl: '' });
   const [chapterForm, setChapterForm] = useState({ title: '', description: '', subjectId: '' });
-  const [videoForm, setVideoForm] = useState({ title: '', description: '', youtubeUrl: '', duration: '', subjectId: '', chapterId: '' });
+  const [videoForm, setVideoForm] = useState<{
+    title: string;
+    description: string;
+    youtubeUrl: string;
+    duration: string;
+    subjectId: string;
+    chapterId: string;
+    jumpPoints: { label: string; timestamp: number }[];
+  }>({ title: '', description: '', youtubeUrl: '', duration: '', subjectId: '', chapterId: '', jumpPoints: [] });
+  const [lectureDeckForm, setLectureDeckForm] = useState({ title: '', description: '', subjectId: '', videoIds: [] as string[] });
 
   // Load data helper
   const loadAllData = async () => {
@@ -62,10 +88,12 @@ export default function App() {
     const c = await dbAPI.getChapters();
     const v = await dbAPI.getVideos();
     const u = await dbAPI.getUsers();
+    const ld = await dbAPI.getLectureDecks();
     
     setSubjects(s);
     setChapters(c);
     setVideos(v);
+    setLectureDecks(ld);
     setUsers(u);
 
     if (s.length > 0) {
@@ -98,7 +126,7 @@ export default function App() {
   };
 
   // Open Add Modals
-  const openAddModal = (type: 'subject' | 'chapter' | 'video') => {
+  const openAddModal = (type: 'subject' | 'chapter' | 'video' | 'lectureDeck') => {
     setModalType(type);
     setModalAction('add');
     setEditId('');
@@ -106,15 +134,17 @@ export default function App() {
     if (type === 'subject') {
       setSubjectForm({ id: '', title: '', description: '', thumbnailUrl: '' });
     } else if (type === 'chapter') {
-      setChapterForm({ title: '', description: '', subjectId: selectedSubjectId });
+      setChapterForm({ title: '', description: '', subjectId: selectedSubjectId || (subjects[0]?.id || '') });
     } else if (type === 'video') {
-      setVideoForm({ title: '', description: '', youtubeUrl: '', duration: '', subjectId: selectedSubjectId, chapterId: selectedChapterId });
+      setVideoForm({ title: '', description: '', youtubeUrl: '', duration: '', subjectId: selectedSubjectId || (subjects[0]?.id || ''), chapterId: selectedChapterId || '', jumpPoints: [] });
+    } else if (type === 'lectureDeck') {
+      setLectureDeckForm({ title: '', description: '', subjectId: selectedSubjectId || (subjects[0]?.id || ''), videoIds: [] });
     }
     setIsModalOpen(true);
   };
 
   // Open Edit Modals
-  const openEditModal = (type: 'subject' | 'chapter' | 'video', item: Subject | Chapter | Video) => {
+  const openEditModal = (type: 'subject' | 'chapter' | 'video' | 'lectureDeck', item: Subject | Chapter | Video | LectureDeck) => {
     setModalType(type);
     setModalAction('edit');
     setEditId(item.id);
@@ -133,7 +163,16 @@ export default function App() {
         youtubeUrl: v.youtubeUrl, 
         duration: v.duration, 
         subjectId: v.subjectId, 
-        chapterId: v.chapterId 
+        chapterId: v.chapterId,
+        jumpPoints: v.jumpPoints || []
+      });
+    } else if (type === 'lectureDeck') {
+      const ld = item as LectureDeck;
+      setLectureDeckForm({
+        title: ld.title,
+        description: ld.description,
+        subjectId: ld.subjectId,
+        videoIds: ld.videoIds
       });
     }
     setIsModalOpen(true);
@@ -160,7 +199,16 @@ export default function App() {
           title: videoForm.title,
           description: videoForm.description,
           youtubeUrl: videoForm.youtubeUrl,
-          duration: videoForm.duration
+          duration: videoForm.duration,
+          jumpPoints: videoForm.jumpPoints
+        });
+      } else if (modalType === 'lectureDeck') {
+        await dbAPI.saveLectureDeck({
+          ...(modalAction === 'edit' ? { id: editId } : {}),
+          subjectId: lectureDeckForm.subjectId,
+          title: lectureDeckForm.title,
+          description: lectureDeckForm.description,
+          videoIds: lectureDeckForm.videoIds
         });
       }
       setIsModalOpen(false);
@@ -171,7 +219,7 @@ export default function App() {
   };
 
   // Handle Deletion
-  const handleDelete = async (type: 'subject' | 'chapter' | 'video', id: string) => {
+  const handleDelete = async (type: 'subject' | 'chapter' | 'video' | 'lectureDeck', id: string) => {
     if (window.confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
       if (type === 'subject') {
         await dbAPI.deleteSubject(id);
@@ -179,6 +227,8 @@ export default function App() {
         await dbAPI.deleteChapter(id);
       } else if (type === 'video') {
         await dbAPI.deleteVideo(id);
+      } else if (type === 'lectureDeck') {
+        await dbAPI.deleteLectureDeck(id);
       }
       await loadAllData();
     }
@@ -281,6 +331,15 @@ export default function App() {
           </li>
           <li>
             <div 
+              className={`menu-item ${activeTab === 'lectureDecks' ? 'active' : ''}`}
+              onClick={() => { setActiveTab('lectureDecks'); setSearchQuery(''); }}
+            >
+              <List size={20} />
+              Lecture Decks
+            </div>
+          </li>
+          <li>
+            <div 
               className={`menu-item ${activeTab === 'users' ? 'active' : ''}`}
               onClick={() => { setActiveTab('users'); setSearchQuery(''); }}
             >
@@ -314,6 +373,7 @@ export default function App() {
             {activeTab === 'subjects' && 'Course Subjects'}
             {activeTab === 'chapters' && 'Chapters Management'}
             {activeTab === 'videos' && 'Video Library'}
+            {activeTab === 'lectureDecks' && 'Lecture Presentation Decks'}
             {activeTab === 'users' && 'Active User Profiles'}
           </h2>
 
@@ -816,6 +876,94 @@ export default function App() {
             </div>
           )}
 
+          {/* ============ LECTURE DECKS VIEW ============ */}
+          {activeTab === 'lectureDecks' && (
+            <div className="content-section">
+              <div className="section-header">
+                <div className="search-input-wrapper">
+                  <Search size={18} className="search-icon-pos" />
+                  <input 
+                    type="text" 
+                    placeholder="Search lecture decks..." 
+                    className="search-input" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+                <button className="primary-btn" onClick={() => openAddModal('lectureDeck')}>
+                  <Plus size={16} />
+                  Create Lecture Deck
+                </button>
+              </div>
+
+              <div className="table-container">
+                <table className="custom-table">
+                  <thead>
+                    <tr>
+                      <th>Deck Title</th>
+                      <th>Parent Subject</th>
+                      <th>Lectures Count</th>
+                      <th>Created At</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lectureDecks
+                      .filter(d => d.title.toLowerCase().includes(searchQuery.toLowerCase()) || d.description.toLowerCase().includes(searchQuery.toLowerCase()))
+                      .map((deck) => (
+                        <tr key={deck.id}>
+                          <td>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontWeight: 600 }}>{deck.title}</span>
+                              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '400px' }}>
+                                {deck.description}
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="badge badge-primary" style={{ textTransform: 'uppercase' }}>
+                              {deck.subjectId}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 600 }}>
+                              {deck.videoIds.length} lectures
+                            </span>
+                          </td>
+                          <td>{new Date(deck.createdAt).toLocaleDateString(undefined, { dateStyle: 'short' })}</td>
+                          <td>
+                            <div className="action-buttons-group">
+                              <button 
+                                className="icon-action-btn edit" 
+                                onClick={() => openEditModal('lectureDeck', deck)}
+                                title="Edit Lecture Deck"
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                              <button 
+                                className="icon-action-btn delete" 
+                                onClick={() => handleDelete('lectureDeck', deck.id)}
+                                title="Delete Lecture Deck"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    {lectureDecks.length === 0 && (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px' }}>
+                          No lecture presentation decks created yet. Click "Create Lecture Deck" to build one.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {/* ============ USER DIRECTORY VIEW ============ */}
           {activeTab === 'users' && (
             <div className="content-section">
@@ -1090,6 +1238,216 @@ export default function App() {
                         value={videoForm.youtubeUrl}
                         onChange={(e) => setVideoForm({ ...videoForm, youtubeUrl: e.target.value })}
                       />
+                    </div>
+
+                    {/* Video Jump Points Widget */}
+                    <div className="form-group">
+                      <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', fontWeight: 700, marginBottom: '8px' }}>
+                        Video Jump-Points (Timestamps)
+                        <button 
+                          type="button" 
+                          className="secondary-btn" 
+                          style={{ padding: '4px 8px', fontSize: '11px' }}
+                          onClick={() => {
+                            setVideoForm({
+                              ...videoForm,
+                              jumpPoints: [...(videoForm.jumpPoints || []), { label: '', timestamp: 0 }]
+                            });
+                          }}
+                        >
+                          + Add Jump Point
+                        </button>
+                      </label>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                        {(videoForm.jumpPoints || []).map((jp, jpIdx) => (
+                          <div key={jpIdx} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <input 
+                              type="text" 
+                              placeholder="Label (e.g. Incision)" 
+                              className="form-control" 
+                              style={{ flex: 2, marginBottom: 0 }}
+                              value={jp.label}
+                              onChange={(e) => {
+                                const updatedJps = [...videoForm.jumpPoints];
+                                updatedJps[jpIdx].label = e.target.value;
+                                setVideoForm({ ...videoForm, jumpPoints: updatedJps });
+                              }}
+                            />
+                            <input 
+                              type="text" 
+                              placeholder="Time (MM:SS)" 
+                              className="form-control" 
+                              style={{ flex: 1, marginBottom: 0 }}
+                              value={secondsToTime(jp.timestamp)}
+                              onChange={(e) => {
+                                const updatedJps = [...videoForm.jumpPoints];
+                                updatedJps[jpIdx].timestamp = timeToSeconds(e.target.value);
+                                setVideoForm({ ...videoForm, jumpPoints: updatedJps });
+                              }}
+                            />
+                            <button 
+                              type="button" 
+                              className="icon-action-btn delete"
+                              style={{ padding: '8px' }}
+                              onClick={() => {
+                                const updatedJps = videoForm.jumpPoints.filter((_, idx) => idx !== jpIdx);
+                                setVideoForm({ ...videoForm, jumpPoints: updatedJps });
+                              }}
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 4. LECTURE DECK FORM */}
+                {modalType === 'lectureDeck' && (
+                  <div>
+                    <div className="form-group">
+                      <label htmlFor="deckTitleInput">Deck Title</label>
+                      <input 
+                        id="deckTitleInput"
+                        type="text" 
+                        className="form-control" 
+                        required
+                        placeholder="e.g. Thoracic Surgery Basics"
+                        value={lectureDeckForm.title}
+                        onChange={(e) => setLectureDeckForm({ ...lectureDeckForm, title: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="deckDescInput">Description / Presenter Notes</label>
+                      <textarea 
+                        id="deckDescInput"
+                        className="form-control" 
+                        required
+                        placeholder="Provide details about the presentation topics..."
+                        value={lectureDeckForm.description}
+                        onChange={(e) => setLectureDeckForm({ ...lectureDeckForm, description: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="deckSubjectSelect">Parent Subject</label>
+                      <select 
+                        id="deckSubjectSelect"
+                        className="form-control" 
+                        required
+                        value={lectureDeckForm.subjectId}
+                        onChange={(e) => {
+                          setLectureDeckForm({ 
+                            ...lectureDeckForm, 
+                            subjectId: e.target.value,
+                            videoIds: [] // Reset selected videos if subject changes
+                          });
+                        }}
+                      >
+                        {subjects.map(s => (
+                          <option key={s.id} value={s.id}>{s.title}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Playlist builder grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginTop: '16px' }}>
+                      {/* Left: Available videos */}
+                      <div>
+                        <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '8px', display: 'block' }}>Available Lectures</label>
+                        <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {videos
+                            .filter(v => v.subjectId === lectureDeckForm.subjectId)
+                            .map(vid => {
+                              const isAdded = lectureDeckForm.videoIds.includes(vid.id);
+                              return (
+                                <div key={vid.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', backgroundColor: 'var(--bg-tertiary)', borderRadius: '6px', fontSize: '12px' }}>
+                                  <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '140px' }}>{vid.title}</span>
+                                  <button
+                                    type="button"
+                                    className={isAdded ? "secondary-btn" : "primary-btn"}
+                                    style={{ padding: '3px 8px', fontSize: '11px' }}
+                                    disabled={isAdded}
+                                    onClick={() => {
+                                      setLectureDeckForm({
+                                        ...lectureDeckForm,
+                                        videoIds: [...lectureDeckForm.videoIds, vid.id]
+                                      });
+                                    }}
+                                  >
+                                    {isAdded ? 'Added' : 'Add'}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          {videos.filter(v => v.subjectId === lectureDeckForm.subjectId).length === 0 && (
+                            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                              No lectures available under this subject.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Ordered playlist */}
+                      <div>
+                        <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '8px', display: 'block' }}>Ordered Playlist ({lectureDeckForm.videoIds.length})</label>
+                        <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {lectureDeckForm.videoIds.map((vidId, idx) => {
+                            const vid = videos.find(v => v.id === vidId);
+                            if (!vid) return null;
+                            return (
+                              <div key={vidId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px', backgroundColor: 'var(--bg-primary)', borderRadius: '6px', border: '1px solid var(--border-color)', fontSize: '11px' }}>
+                                <span style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100px' }}>{idx + 1}. {vid.title}</span>
+                                <div style={{ display: 'flex', gap: '4px' }}>
+                                  <button
+                                    type="button"
+                                    style={{ padding: '2px 4px', fontSize: '10px', cursor: 'pointer' }}
+                                    disabled={idx === 0}
+                                    onClick={() => {
+                                      const updated = [...lectureDeckForm.videoIds];
+                                      const temp = updated[idx];
+                                      updated[idx] = updated[idx - 1];
+                                      updated[idx - 1] = temp;
+                                      setLectureDeckForm({ ...lectureDeckForm, videoIds: updated });
+                                    }}
+                                  >
+                                    ↑
+                                  </button>
+                                  <button
+                                    type="button"
+                                    style={{ padding: '2px 4px', fontSize: '10px', cursor: 'pointer' }}
+                                    disabled={idx === lectureDeckForm.videoIds.length - 1}
+                                    onClick={() => {
+                                      const updated = [...lectureDeckForm.videoIds];
+                                      const temp = updated[idx];
+                                      updated[idx] = updated[idx + 1];
+                                      updated[idx + 1] = temp;
+                                      setLectureDeckForm({ ...lectureDeckForm, videoIds: updated });
+                                    }}
+                                  >
+                                    ↓
+                                  </button>
+                                  <button
+                                    type="button"
+                                    style={{ padding: '2px 4px', fontSize: '10px', color: 'red', cursor: 'pointer' }}
+                                    onClick={() => {
+                                      const updated = lectureDeckForm.videoIds.filter(id => id !== vidId);
+                                      setLectureDeckForm({ ...lectureDeckForm, videoIds: updated });
+                                    }}
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {lectureDeckForm.videoIds.length === 0 && (
+                            <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                              Playlist is empty. Add lectures from the left panel.
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}

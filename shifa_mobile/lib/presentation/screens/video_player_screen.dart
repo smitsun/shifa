@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
@@ -30,6 +31,29 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
   bool _isBookmarked = false;
   List<VideoNote> _notes = [];
   bool _isPlayerReady = false;
+
+  bool _isCasting = false;
+  String? _selectedCastDisplay;
+  bool _presenterViewEnabled = false;
+  Duration _elapsedPresentationTime = Duration.zero;
+  Timer? _timer;
+
+  void _startTimer() {
+    _timer?.cancel();
+    _elapsedPresentationTime = Duration.zero;
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _elapsedPresentationTime += const Duration(seconds: 1);
+        });
+      }
+    });
+  }
+
+  void _stopTimer() {
+    _timer?.cancel();
+    _timer = null;
+  }
 
   @override
   void initState() {
@@ -104,7 +128,336 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
     _controller.removeListener(_listener);
     _controller.dispose();
     _noteController.dispose();
+    _timer?.cancel();
     super.dispose();
+  }
+
+  // --- Cast Simulation Helper Methods ---
+  void _showCastSelectorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Connect to Classroom Display'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.tv_rounded),
+                title: const Text('Main Lecture Room Projector'),
+                onTap: () => _connectToCast('Main Projector'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.tv_rounded),
+                title: const Text('Anatomy Lab Side Screen'),
+                onTap: () => _connectToCast('Lab Side Screen'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.tv_rounded),
+                title: const Text('Seminar Hall Display B'),
+                onTap: () => _connectToCast('Seminar Display B'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            )
+          ],
+        );
+      },
+    );
+  }
+
+  void _connectToCast(String displayName) {
+    Navigator.pop(context); // Dismiss dialog
+    setState(() {
+      _isCasting = true;
+      _selectedCastDisplay = displayName;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Casting to $displayName successfully!')),
+    );
+  }
+
+  void _disconnectCast() {
+    _stopTimer();
+    setState(() {
+      _isCasting = false;
+      _selectedCastDisplay = null;
+      _presenterViewEnabled = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Disconnected from classroom display.')),
+    );
+  }
+
+  Widget _buildPresenterDashboard(ThemeData theme, Widget player) {
+    final isPlaying = _controller.value.isPlaying;
+    final currentPosition = _controller.value.position;
+    final totalDuration = _controller.value.metaData.duration;
+
+    return Container(
+      color: const Color(0xFF0F0F1A), // midnight blue
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.close_rounded, color: Colors.white),
+            onPressed: () {
+              setState(() {
+                _presenterViewEnabled = false;
+              });
+              _stopTimer();
+            },
+          ),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Smart Remote Console',
+                style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Text(
+                'Casting to $_selectedCastDisplay',
+                style: TextStyle(color: Colors.blueAccent, fontSize: 11),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton.icon(
+              onPressed: _disconnectCast,
+              icon: const Icon(Icons.cast_connected, color: Colors.redAccent, size: 16),
+              label: const Text('Disconnect', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+            ),
+          ],
+        ),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Presentation Timer & Status
+              GlassCard(
+                color: Colors.white.withOpacity(0.04),
+                borderColor: Colors.white.withOpacity(0.1),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(color: Colors.green, blurRadius: 8, spreadRadius: 2),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'PRESENTATION ACTIVE',
+                          style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      _formatDuration(_elapsedPresentationTime.inSeconds),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 48,
+                        fontWeight: FontWeight.w300,
+                        fontFamily: 'Courier',
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const Text(
+                      'Elapsed Lecture Time',
+                      style: TextStyle(color: Colors.white38, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Confidence Monitor (Direct Cast Preview)
+              const Text(
+                'CONFIDENCE MONITOR (CAST PREVIEW)',
+                style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1),
+              ),
+              const SizedBox(height: 10),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  height: 180,
+                  child: player,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Remote Control Actions
+              GlassCard(
+                color: Colors.white.withOpacity(0.04),
+                borderColor: Colors.white.withOpacity(0.1),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'CURRENT LECTURE VIDEO',
+                      style: TextStyle(color: theme.colorScheme.primary, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.video.title,
+                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 12),
+                    // Progress Slider
+                    Row(
+                      children: [
+                        Text(
+                          _formatDuration(currentPosition.inSeconds),
+                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                        Expanded(
+                          child: Slider(
+                            value: currentPosition.inSeconds.toDouble(),
+                            min: 0.0,
+                            max: totalDuration.inSeconds.toDouble() > 0.0 
+                                ? totalDuration.inSeconds.toDouble() 
+                                : 100.0,
+                            activeColor: theme.colorScheme.primary,
+                            inactiveColor: Colors.white10,
+                            onChanged: (value) {
+                              _controller.seekTo(Duration(seconds: value.toInt()));
+                            },
+                          ),
+                        ),
+                        Text(
+                          _formatDuration(totalDuration.inSeconds),
+                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                      ],
+                    ),
+                    // Playback Buttons
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.replay_10_rounded, color: Colors.white, size: 28),
+                          onPressed: () {
+                            final newPos = currentPosition - const Duration(seconds: 10);
+                            _controller.seekTo(newPos < Duration.zero ? Duration.zero : newPos);
+                          },
+                        ),
+                        const SizedBox(width: 24),
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: theme.colorScheme.primary,
+                          child: IconButton(
+                            icon: Icon(
+                              isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                              color: Colors.white,
+                              size: 28,
+                            ),
+                            onPressed: () {
+                              if (isPlaying) {
+                                _controller.pause();
+                              } else {
+                                _controller.play();
+                              }
+                              setState(() {});
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+                        IconButton(
+                          icon: const Icon(Icons.forward_10_rounded, color: Colors.white, size: 28),
+                          onPressed: () {
+                            final newPos = currentPosition + const Duration(seconds: 10);
+                            _controller.seekTo(newPos);
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Jump Points inside dashboard
+              if (widget.video.jumpPoints.isNotEmpty) ...[
+                const Text(
+                  'INDEXED JUMP POINTS',
+                  style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1),
+                ),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: 44,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.video.jumpPoints.length,
+                    itemBuilder: (context, index) {
+                      final jp = widget.video.jumpPoints[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white.withOpacity(0.08),
+                            foregroundColor: Colors.white,
+                            side: BorderSide(color: Colors.white.withOpacity(0.15)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          ),
+                          onPressed: () {
+                            _controller.seekTo(Duration(seconds: jp.timestamp));
+                          },
+                          icon: const Icon(Icons.label_important_outline_rounded, size: 14, color: Colors.blueAccent),
+                          label: Text(
+                            '${_formatDuration(jp.timestamp)} - ${jp.label}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+
+              // Speaker Notes notepad
+              const Text(
+                'PRIVATE SPEAKER NOTES',
+                style: TextStyle(color: Colors.white54, fontSize: 12, fontWeight: FontWeight.bold, letterSpacing: 1),
+              ),
+              const SizedBox(height: 10),
+              GlassCard(
+                color: Colors.white.withOpacity(0.02),
+                borderColor: Colors.white.withOpacity(0.08),
+                padding: const EdgeInsets.all(12),
+                child: const TextField(
+                  maxLines: 5,
+                  style: TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+                  decoration: InputDecoration(
+                    hintText: 'Type reminders, bullet points, and clinical notes here. Visible to you only, not classroom screens...',
+                    hintStyle: TextStyle(color: Colors.white24, fontSize: 12),
+                    border: InputBorder.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 100),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   // --- Bookmark Toggle ---
@@ -120,7 +473,7 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
       _isBookmarked = !_isBookmarked;
     });
 
-    ref.refresh(bookmarksProvider);
+    final _ = ref.refresh(bookmarksProvider);
   }
 
   // --- Add Timestamped Note ---
@@ -274,6 +627,9 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
         },
       ),
       builder: (context, player) {
+        if (_presenterViewEnabled) {
+          return _buildPresenterDashboard(theme, player);
+        }
         return Container(
           decoration: isDark 
               ? AppTheme.darkPageBackgroundDecoration 
@@ -285,6 +641,16 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
               elevation: 0,
               scrolledUnderElevation: 0,
               title: const Text('Lecture Video Player'),
+              actions: [
+                IconButton(
+                  icon: Icon(
+                    _isCasting ? Icons.cast_connected : Icons.cast_rounded,
+                    color: _isCasting ? theme.colorScheme.primary : null,
+                  ),
+                  onPressed: _showCastSelectorDialog,
+                  tooltip: 'Connect to classroom cast screen',
+                ),
+              ],
             ),
             body: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -307,6 +673,82 @@ class _VideoPlayerScreenState extends ConsumerState<VideoPlayerScreen> {
                         const SizedBox(height: 6),
                         _buildDescriptionText(widget.video.description, theme),
                         const SizedBox(height: 12),
+
+                        // Jump points chips below description
+                        if (widget.video.jumpPoints.isNotEmpty) ...[
+                          SizedBox(
+                            height: 38,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: widget.video.jumpPoints.length,
+                              itemBuilder: (context, index) {
+                                final jp = widget.video.jumpPoints[index];
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 8.0),
+                                  child: ActionChip(
+                                    avatar: Icon(
+                                      Icons.fast_forward_rounded,
+                                      size: 14,
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                    label: Text(
+                                      '${_formatDuration(jp.timestamp)} ${jp.label}',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.primary,
+                                      ),
+                                    ),
+                                    backgroundColor: theme.colorScheme.primary.withOpacity(0.08),
+                                    side: BorderSide(color: theme.colorScheme.primary.withOpacity(0.2)),
+                                    onPressed: () {
+                                      _controller.seekTo(Duration(seconds: jp.timestamp));
+                                    },
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+
+                        // Casting banner
+                        if (_isCasting) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.cast_connected, color: theme.colorScheme.primary, size: 18),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    'Casting to $_selectedCastDisplay',
+                                    style: TextStyle(
+                                      fontSize: 12, 
+                                      fontWeight: FontWeight.bold, 
+                                      color: theme.colorScheme.primary,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _presenterViewEnabled = true;
+                                    });
+                                    _startTimer();
+                                  },
+                                  child: const Text('Open Presenter View', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
 
                         // Actions bar
                         Row(

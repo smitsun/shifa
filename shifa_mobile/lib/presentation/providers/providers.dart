@@ -178,3 +178,9 @@ final videoProgressProvider = FutureProvider.autoDispose.family<VideoProgress?, 
   final repo = ref.watch(learningRepositoryProvider);
   return repo.getProgress(videoId);
 });
+
+// Lecture Decks provider
+final lectureDecksProvider = FutureProvider.autoDispose<List<LectureDeck>>((ref) async {
+  final repo = ref.watch(learningRepositoryProvider);
+  return repo.getLectureDecks();
+});

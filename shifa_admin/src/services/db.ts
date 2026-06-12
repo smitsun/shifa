@@ -1,5 +1,5 @@
 import { mockDB } from './mockData';
-import type { Subject, Chapter, Video, UserProfile } from './mockData';
+import type { Subject, Chapter, Video, UserProfile, LectureDeck } from './mockData';
 
 // Toggle this to false to link directly with Firebase
 export const USE_MOCK = true;
@@ -141,6 +141,7 @@ const saveVideo = async (video: Omit<Video, 'id' | 'createdAt' | 'updatedAt' | '
       duration: video.duration,
       thumbnailUrl,
       updatedAt: now,
+      jumpPoints: video.jumpPoints || [],
     };
     videos[index] = updated;
     mockDB.saveVideos(videos);
@@ -157,6 +158,7 @@ const saveVideo = async (video: Omit<Video, 'id' | 'createdAt' | 'updatedAt' | '
       thumbnailUrl,
       createdAt: now,
       updatedAt: now,
+      jumpPoints: video.jumpPoints || [],
     };
     videos.push(created);
     mockDB.saveVideos(videos);
@@ -203,6 +205,49 @@ const updateUserRole = async (uid: string, role: 'student' | 'admin'): Promise<v
   }
 };
 
+const getLectureDecks = async (): Promise<LectureDeck[]> => {
+  return mockDB.getLectureDecks();
+};
+
+const saveLectureDeck = async (deck: Omit<LectureDeck, 'id' | 'createdAt' | 'updatedAt'> & { id?: string }): Promise<LectureDeck> => {
+  const decks = mockDB.getLectureDecks();
+  const id = deck.id || `deck_${deck.title.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`;
+  const index = decks.findIndex((d) => d.id === id);
+  const now = new Date().toISOString();
+
+  if (index >= 0) {
+    const updated: LectureDeck = {
+      ...decks[index],
+      title: deck.title,
+      description: deck.description,
+      subjectId: deck.subjectId,
+      videoIds: deck.videoIds,
+      updatedAt: now,
+    };
+    decks[index] = updated;
+    mockDB.saveLectureDecks(decks);
+    return updated;
+  } else {
+    const created: LectureDeck = {
+      id,
+      title: deck.title,
+      description: deck.description,
+      subjectId: deck.subjectId,
+      videoIds: deck.videoIds,
+      createdAt: now,
+      updatedAt: now,
+    };
+    decks.push(created);
+    mockDB.saveLectureDecks(decks);
+    return created;
+  }
+};
+
+const deleteLectureDeck = async (id: string): Promise<void> => {
+  const decks = mockDB.getLectureDecks().filter((d) => d.id !== id);
+  mockDB.saveLectureDecks(decks);
+};
+
 // Export database client API (Decoupled, easy to integrate Firebase in future)
 export const dbAPI = {
   getSubjects,
@@ -216,4 +261,7 @@ export const dbAPI = {
   deleteVideo,
   getUsers,
   updateUserRole,
+  getLectureDecks,
+  saveLectureDeck,
+  deleteLectureDeck,
 };

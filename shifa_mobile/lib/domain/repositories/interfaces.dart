@@ -16,6 +16,7 @@ abstract class LearningRepository {
   Future<List<Video>> getVideos(String subjectId, String chapterId, {bool forceRefresh = false});
   Future<List<Video>> searchVideos(String query);
   Future<Video?> getVideoById(String videoId);
+  Future<List<LectureDeck>> getLectureDecks({bool forceRefresh = false});
   
   // Progress
   Future<VideoProgress?> getProgress(String videoId);

@@ -4,6 +4,7 @@ abstract class RemoteDataSource {
   Future<List<SubjectModel>> getSubjects();
   Future<List<ChapterModel>> getChapters(String subjectId);
   Future<List<VideoModel>> getVideos(String subjectId, String chapterId);
+  Future<List<LectureDeckModel>> getLectureDecks();
   Future<UserModel> login(String email, String password);
   Future<UserModel> signup(String email, String password, String name);
   Future<UserModel> loginWithGoogle();
@@ -72,7 +73,6 @@ class RemoteDataSourceImpl implements RemoteDataSource {
     ChapterModel(id: 'phys_resp', subjectId: 'physiology', title: 'Respiratory System', description: 'Pulmonary ventilation, gas transport, and compliance.', videosCount: 0, createdAt: DateTime.parse('2026-06-02T09:30:00.000Z')),
   ];
 
-  final List<VideoModel> _mockVideos = [
     VideoModel(
       id: 'anatomy_ul_intro',
       subjectId: 'anatomy',
@@ -84,6 +84,12 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       duration: '08:45',
       createdAt: DateTime.parse('2026-06-01T10:00:00.000Z'),
       updatedAt: DateTime.parse('2026-06-01T10:00:00.000Z'),
+      jumpPoints: [
+        VideoJumpPointModel(label: 'Introduction', timestamp: 0),
+        VideoJumpPointModel(label: 'Skeletal Layout', timestamp: 80),
+        VideoJumpPointModel(label: 'Fascial Compartments', timestamp: 225),
+        VideoJumpPointModel(label: 'Nerve Outlines', timestamp: 370),
+      ],
     ),
     VideoModel(
       id: 'anatomy_ul_bones',
@@ -96,6 +102,12 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       duration: '14:20',
       createdAt: DateTime.parse('2026-06-01T10:15:00.000Z'),
       updatedAt: DateTime.parse('2026-06-01T10:15:00.000Z'),
+      jumpPoints: [
+        VideoJumpPointModel(label: 'Introduction', timestamp: 0),
+        VideoJumpPointModel(label: 'Humerus Bone', timestamp: 135),
+        VideoJumpPointModel(label: 'Radius & Ulna', timestamp: 340),
+        VideoJumpPointModel(label: 'Wrist & Carpals', timestamp: 550),
+      ],
     ),
     VideoModel(
       id: 'anatomy_ul_muscles',
@@ -146,6 +158,12 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       duration: '15:55',
       createdAt: DateTime.parse('2026-06-02T10:00:00.000Z'),
       updatedAt: DateTime.parse('2026-06-02T10:00:00.000Z'),
+      jumpPoints: [
+        VideoJumpPointModel(label: 'Introduction', timestamp: 0),
+        VideoJumpPointModel(label: 'Atrial Systole', timestamp: 190),
+        VideoJumpPointModel(label: 'Isovolumetric Contraction', timestamp: 465),
+        VideoJumpPointModel(label: 'Ventricular Ejection', timestamp: 680),
+      ],
     ),
     VideoModel(
       id: 'phys_cv_ecg',
@@ -159,6 +177,33 @@ class RemoteDataSourceImpl implements RemoteDataSource {
       createdAt: DateTime.parse('2026-06-02T10:30:00.000Z'),
       updatedAt: DateTime.parse('2026-06-02T10:30:00.000Z'),
     )
+  ];
+
+  final List<LectureDeckModel> _mockDecks = [
+    LectureDeckModel(
+      id: 'deck_anatomy_overview',
+      title: 'Upper Limb Anatomy Overview',
+      description: 'A comprehensive study of the upper limb skeleton, compartments, and major muscles.',
+      subjectId: 'anatomy',
+      videoIds: ['anatomy_ul_intro', 'anatomy_ul_bones', 'anatomy_ul_muscles'],
+      createdAt: DateTime.parse('2026-06-10T08:00:00.000Z'),
+    ),
+    LectureDeckModel(
+      id: 'deck_brachial_plexus',
+      title: 'Brachial Plexus Deep Dive',
+      description: 'Mastering the nerves and blood supply of the upper extremity.',
+      subjectId: 'anatomy',
+      videoIds: ['anatomy_ul_nerves', 'anatomy_ul_blood'],
+      createdAt: DateTime.parse('2026-06-11T08:00:00.000Z'),
+    ),
+    LectureDeckModel(
+      id: 'deck_cardio_fundamentals',
+      title: 'Cardiovascular Fundamentals',
+      description: 'Crucial physiology concepts: cardiac cycles, volume loops, and reading ECG basics.',
+      subjectId: 'physiology',
+      videoIds: ['phys_cv_cycle', 'phys_cv_ecg'],
+      createdAt: DateTime.parse('2026-06-12T08:00:00.000Z'),
+    ),
   ];
 
   @override
@@ -177,6 +222,12 @@ class RemoteDataSourceImpl implements RemoteDataSource {
   Future<List<VideoModel>> getVideos(String subjectId, String chapterId) async {
     await Future.delayed(const Duration(milliseconds: 500));
     return _mockVideos.where((v) => v.subjectId == subjectId && v.chapterId == chapterId).toList();
+  }
+
+  @override
+  Future<List<LectureDeckModel>> getLectureDecks() async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    return _mockDecks;
   }
 
   @override

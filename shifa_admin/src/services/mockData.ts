@@ -17,6 +17,11 @@ export interface Chapter {
   createdAt: string;
 }
 
+export interface VideoJumpPoint {
+  label: string;
+  timestamp: number; // in seconds
+}
+
 export interface Video {
   id: string;
   subjectId: string;
@@ -26,6 +31,17 @@ export interface Video {
   youtubeUrl: string;
   thumbnailUrl: string;
   duration: string;
+  createdAt: string;
+  updatedAt: string;
+  jumpPoints?: VideoJumpPoint[];
+}
+
+export interface LectureDeck {
+  id: string;
+  title: string;
+  description: string;
+  subjectId: string;
+  videoIds: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -118,7 +134,6 @@ const INITIAL_CHAPTERS: Chapter[] = [
 ];
 
 const INITIAL_VIDEOS: Video[] = [
-  // Anatomy -> Upper Limb
   {
     id: 'anatomy_ul_intro',
     subjectId: 'anatomy',
@@ -129,7 +144,13 @@ const INITIAL_VIDEOS: Video[] = [
     thumbnailUrl: 'https://img.youtube.com/vi/kYOpVj2Zoxw/maxresdefault.jpg',
     duration: '08:45',
     createdAt: '2026-06-01T10:00:00.000Z',
-    updatedAt: '2026-06-01T10:00:00.000Z'
+    updatedAt: '2026-06-01T10:00:00.000Z',
+    jumpPoints: [
+      { label: 'Introduction', timestamp: 0 },
+      { label: 'Skeletal Layout', timestamp: 80 },
+      { label: 'Fascial Compartments', timestamp: 225 },
+      { label: 'Nerve Outlines', timestamp: 370 }
+    ]
   },
   {
     id: 'anatomy_ul_bones',
@@ -141,7 +162,13 @@ const INITIAL_VIDEOS: Video[] = [
     thumbnailUrl: 'https://img.youtube.com/vi/wQ1wH1xL4jM/maxresdefault.jpg',
     duration: '14:20',
     createdAt: '2026-06-01T10:15:00.000Z',
-    updatedAt: '2026-06-01T10:15:00.000Z'
+    updatedAt: '2026-06-01T10:15:00.000Z',
+    jumpPoints: [
+      { label: 'Introduction', timestamp: 0 },
+      { label: 'Humerus Bone', timestamp: 135 },
+      { label: 'Radius & Ulna', timestamp: 340 },
+      { label: 'Wrist & Carpals', timestamp: 550 }
+    ]
   },
   {
     id: 'anatomy_ul_muscles',
@@ -191,7 +218,13 @@ const INITIAL_VIDEOS: Video[] = [
     thumbnailUrl: 'https://img.youtube.com/vi/5tUWOF6wZyM/maxresdefault.jpg',
     duration: '15:55',
     createdAt: '2026-06-02T10:00:00.000Z',
-    updatedAt: '2026-06-02T10:00:00.000Z'
+    updatedAt: '2026-06-02T10:00:00.000Z',
+    jumpPoints: [
+      { label: 'Introduction', timestamp: 0 },
+      { label: 'Atrial Systole', timestamp: 190 },
+      { label: 'Isovolumetric Contraction', timestamp: 465 },
+      { label: 'Ventricular Ejection', timestamp: 680 }
+    ]
   },
   {
     id: 'phys_cv_ecg',
@@ -204,6 +237,36 @@ const INITIAL_VIDEOS: Video[] = [
     duration: '19:30',
     createdAt: '2026-06-02T10:30:00.000Z',
     updatedAt: '2026-06-02T10:30:00.000Z'
+  }
+];
+
+const INITIAL_LECTURE_DECKS: LectureDeck[] = [
+  {
+    id: 'deck_anatomy_overview',
+    title: 'Upper Limb Anatomy Overview',
+    description: 'A comprehensive study of the upper limb skeleton, compartments, and major muscles.',
+    subjectId: 'anatomy',
+    videoIds: ['anatomy_ul_intro', 'anatomy_ul_bones', 'anatomy_ul_muscles'],
+    createdAt: '2026-06-10T08:00:00.000Z',
+    updatedAt: '2026-06-10T08:00:00.000Z'
+  },
+  {
+    id: 'deck_brachial_plexus',
+    title: 'Brachial Plexus Deep Dive',
+    description: 'Mastering the nerves and blood supply of the upper extremity.',
+    subjectId: 'anatomy',
+    videoIds: ['anatomy_ul_nerves', 'anatomy_ul_blood'],
+    createdAt: '2026-06-11T08:00:00.000Z',
+    updatedAt: '2026-06-11T08:00:00.000Z'
+  },
+  {
+    id: 'deck_cardio_fundamentals',
+    title: 'Cardiovascular Fundamentals',
+    description: 'Crucial physiology concepts: cardiac cycles, volume loops, and reading ECG basics.',
+    subjectId: 'physiology',
+    videoIds: ['phys_cv_cycle', 'phys_cv_ecg'],
+    createdAt: '2026-06-12T08:00:00.000Z',
+    updatedAt: '2026-06-12T08:00:00.000Z'
   }
 ];
 
@@ -286,6 +349,14 @@ class MockDBManager {
 
   saveVideos(videos: Video[]): void {
     this.setStorageItem('shifa_videos', videos);
+  }
+
+  getLectureDecks(): LectureDeck[] {
+    return this.getStorageItem<LectureDeck[]>('shifa_lecture_decks', INITIAL_LECTURE_DECKS);
+  }
+
+  saveLectureDecks(decks: LectureDeck[]): void {
+    this.setStorageItem('shifa_lecture_decks', decks);
   }
 
   getUsers(): UserProfile[] {

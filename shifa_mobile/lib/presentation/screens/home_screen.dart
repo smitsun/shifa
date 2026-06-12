@@ -228,6 +228,143 @@ class _DashboardTab extends ConsumerWidget {
             const SizedBox(height: 28),
           ],
 
+          // Lecture Presentation Decks Section
+          Text('Lecture Presentation Decks', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          ref.watch(lectureDecksProvider).when(
+            data: (decks) {
+              if (decks.isEmpty) return const SizedBox.shrink();
+              return SizedBox(
+                height: 140,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: decks.length,
+                  itemBuilder: (context, index) {
+                    final deck = decks[index];
+                    return Container(
+                      width: 280,
+                      margin: const EdgeInsets.only(right: 16),
+                      child: GestureDetector(
+                        onTap: () async {
+                          // Show loading spinner
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const Center(
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                          
+                          try {
+                            final repo = ref.read(learningRepositoryProvider);
+                            List<Video> playlist = [];
+                            for (var vidId in deck.videoIds) {
+                              final v = await repo.getVideoById(vidId);
+                              if (v != null) {
+                                playlist.add(v);
+                              } else {
+                                // If not cached locally, we can query it or use mock sync
+                                // For now, we fallback to finding it in the mock videos list directly if not cached
+                              }
+                            }
+                            
+                            // If playlist is empty, try to fetch from remote
+                            if (playlist.isEmpty) {
+                              final subVideos = await repo.getVideos(deck.subjectId, 'anatomy_upper_limb'); // default to upper limb for demo
+                              playlist = subVideos.where((v) => deck.videoIds.contains(v.id)).toList();
+                            }
+
+                            if (context.mounted) {
+                              Navigator.pop(context); // Dismiss loading spinner
+                              if (playlist.isNotEmpty) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => VideoPlayerScreen(
+                                      video: playlist.first,
+                                      playlist: playlist,
+                                    ),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('This lecture deck has no available videos.'),
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error loading deck: $e')),
+                              );
+                            }
+                          }
+                        },
+                        child: GlassCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.play_lesson_rounded,
+                                    color: theme.colorScheme.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      deck.title,
+                                      style: theme.textTheme.titleMedium?.copyWith(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Expanded(
+                                child: Text(
+                                  deck.description,
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    fontSize: 12,
+                                    color: isDark ? Colors.white70 : Colors.black87,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '${deck.videoIds.length} lectures • ${deck.subjectId.toUpperCase()}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: theme.colorScheme.primary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            error: (err, stack) => const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 24),
+
           // Featured Courses / Subjects Title
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

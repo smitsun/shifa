@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../domain/entities/entities.dart';
 
 class UserModel extends AppUser {
@@ -139,9 +140,20 @@ class VideoModel extends Video {
     required super.duration,
     required super.createdAt,
     required super.updatedAt,
+    super.jumpPoints,
   });
 
   factory VideoModel.fromMap(Map<String, dynamic> map) {
+    List<VideoJumpPoint> parsedJumpPoints = [];
+    if (map['jumpPoints'] != null) {
+      try {
+        final dynamic jpData = map['jumpPoints'];
+        final List<dynamic> jpList = jpData is String 
+            ? jsonDecode(jpData) 
+            : jpData;
+        parsedJumpPoints = jpList.map((j) => VideoJumpPointModel.fromMap(Map<String, dynamic>.from(j))).toList();
+      } catch (_) {}
+    }
     return VideoModel(
       id: map['id'] ?? '',
       subjectId: map['subjectId'] ?? '',
@@ -157,6 +169,7 @@ class VideoModel extends Video {
       updatedAt: map['updatedAt'] != null 
           ? DateTime.parse(map['updatedAt']) 
           : DateTime.now(),
+      jumpPoints: parsedJumpPoints,
     );
   }
 
@@ -172,6 +185,7 @@ class VideoModel extends Video {
       'duration': duration,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      'jumpPoints': jsonEncode(jumpPoints.map((j) => VideoJumpPointModel(label: j.label, timestamp: j.timestamp).toMap()).toList()),
     };
   }
 }
@@ -276,6 +290,72 @@ class BookmarkModel extends Bookmark {
       'itemId': itemId,
       'itemType': itemType,
       'bookmarkedAt': bookmarkedAt.toIso8601String(),
+    };
+  }
+}
+
+class VideoJumpPointModel extends VideoJumpPoint {
+  VideoJumpPointModel({
+    required super.label,
+    required super.timestamp,
+  });
+
+  factory VideoJumpPointModel.fromMap(Map<String, dynamic> map) {
+    return VideoJumpPointModel(
+      label: map['label'] ?? '',
+      timestamp: map['timestamp'] ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'label': label,
+      'timestamp': timestamp,
+    };
+  }
+}
+
+class LectureDeckModel extends LectureDeck {
+  LectureDeckModel({
+    required super.id,
+    required super.title,
+    required super.description,
+    required super.subjectId,
+    required super.videoIds,
+    required super.createdAt,
+  });
+
+  factory LectureDeckModel.fromMap(Map<String, dynamic> map) {
+    List<String> parsedVideoIds = [];
+    if (map['videoIds'] != null) {
+      try {
+        final dynamic vData = map['videoIds'];
+        final List<dynamic> vList = vData is String 
+            ? jsonDecode(vData) 
+            : vData;
+        parsedVideoIds = List<String>.from(vList);
+      } catch (_) {}
+    }
+    return LectureDeckModel(
+      id: map['id'] ?? '',
+      title: map['title'] ?? '',
+      description: map['description'] ?? '',
+      subjectId: map['subjectId'] ?? '',
+      videoIds: parsedVideoIds,
+      createdAt: map['createdAt'] != null 
+          ? DateTime.parse(map['createdAt']) 
+          : DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'subjectId': subjectId,
+      'videoIds': jsonEncode(videoIds),
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 }
