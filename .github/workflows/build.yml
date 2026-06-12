@@ -46,6 +46,13 @@ jobs:
           cd shifa_mobile
           flutter pub get
 
+      # 4.5 Patch Proguard configurations in dependencies and generated android directory
+      - name: Patch Proguard Configurations
+        run: |
+          echo "Patching proguard-android.txt to proguard-android-optimize.txt in pub-cache and android workspace..."
+          find /home/runner/.pub-cache -name "build.gradle" -exec sed -i 's/proguard-android.txt/proguard-android-optimize.txt/g' {} +
+          find shifa_mobile/android -name "build.gradle" -exec sed -i 's/proguard-android.txt/proguard-android-optimize.txt/g' {} +
+
       # 5. Compile release APK
       - name: Build APK
         run: |
