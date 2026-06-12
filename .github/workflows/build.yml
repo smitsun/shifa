@@ -55,11 +55,28 @@ jobs:
 
       # 5. Compile release APK
       - name: Build APK
+        shell: bash
         run: |
           cd shifa_mobile
-          flutter build apk --release
+          set -o pipefail
+          flutter build apk --release --no-pub 2>&1 | tee build_log.txt
 
-      # 6. Upload built APK as GitHub artifact
+      # 5.1 Print build log tail on failure
+      - name: Print failure logs
+        if: failure()
+        run: |
+          echo "=== BUILD FAILED: Printing last 200 lines of build log ==="
+          tail -n 200 shifa_mobile/build_log.txt
+
+      # 5.5 Upload build log (always runs, even on failure)
+      - name: Upload Build Log Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-build-log
+          path: shifa_mobile/build_log.txt
+
+      # 6. Upload built APK as GitHub artifact (only on success)
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
