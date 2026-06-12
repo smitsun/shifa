@@ -210,7 +210,7 @@ export default function App() {
       }}>
         <div className="modal-content" style={{ width: '400px', padding: '40px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-            <img src="/logo.png" alt="Shifa Care Logo" style={{ height: '70px', width: 'auto', marginBottom: '8px', borderRadius: '12px', background: 'white', padding: '6px' }} />
+            <img src="./logo.png" alt="Shifa Care Logo" style={{ height: '70px', width: 'auto', marginBottom: '8px', borderRadius: '12px', background: 'white', padding: '6px' }} />
             <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-primary)' }}>Shifa Care Admin Console</h2>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', textAlign: 'center' }}>Please authenticate to access the course catalog dashboard.</p>
           </div>
@@ -238,7 +238,7 @@ export default function App() {
       {/* Sidebar */}
       <aside className="sidebar">
         <div className="sidebar-header">
-          <img src="/logo.png" alt="Logo" style={{ height: '34px', width: 'auto', borderRadius: '6px', background: 'white', padding: '3px' }} />
+          <img src="./logo.png" alt="Logo" style={{ height: '34px', width: 'auto', borderRadius: '6px', background: 'white', padding: '3px' }} />
           <span className="logo-text">Shifa Care</span>
         </div>
         
