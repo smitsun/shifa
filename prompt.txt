@@ -1,0 +1,227 @@
+Act as a Senior Mobile Architect, Senior Flutter Developer, UI/UX Designer, and Backend Engineer.
+
+Build a complete production-ready cross-platform Healthcare Education Mobile Application for Android and iOS.
+
+Application Purpose:
+The app is designed for medical students and healthcare professionals to learn medical subjects through organized video lectures.
+
+Technology Requirements:
+
+* Flutter (latest stable version)
+* Clean Architecture
+* MVVM or Riverpod State Management
+* Responsive UI
+* Material Design 3
+* Dark Mode and Light Mode
+* Local caching
+* High-performance scrolling
+* Offline support for metadata
+* YouTube video integration
+* Firebase backend
+
+Core Features:
+
+1. Authentication
+
+* Login
+* Signup
+* Forgot Password
+* Google Sign-In
+* Guest Access
+
+2. Home Screen
+
+* Search subjects
+* Featured subjects
+* Recently watched videos
+* Continue learning section
+
+3. Subjects Module
+
+There will be multiple subjects such as:
+
+* Anatomy
+* Physiology
+* Biochemistry
+* Pathology
+* Pharmacology
+* Microbiology
+* Surgery
+* Medicine
+* Pediatrics
+* Gynecology
+
+Each subject contains multiple chapters.
+
+Example:
+
+Anatomy
+- Upper Limb
+- Lower Limb
+- Thorax
+- Abdomen
+- Head and Neck
+
+Each chapter contains multiple video lectures.
+
+Example:
+
+Anatomy
+Upper Limb
+- Introduction
+- Bones
+- Muscles
+- Nerves
+- Blood Supply
+
+Each topic should display:
+
+* Thumbnail
+* Video title
+* Duration
+* Description
+* Last updated date
+
+4. Video Learning Module
+
+Use YouTube videos through stored YouTube URLs.
+
+Features:
+
+* Embedded YouTube player
+* Fullscreen mode
+* Playback speed controls
+* Auto-play next video
+* Resume where user stopped
+* Watch history
+* Mark as completed
+* Favorite videos
+* Notes section
+* Share video
+
+5. Search
+
+Global search across:
+
+* Subjects
+* Chapters
+* Videos
+
+Search should be fast and support filtering.
+
+6. Learning Progress
+
+Track:
+
+* Total videos watched
+* Completed chapters
+* Completed subjects
+* Learning percentage
+* Learning streak
+
+7. Bookmarks
+
+Users can bookmark:
+
+* Videos
+* Chapters
+* Subjects
+
+8. Admin Panel
+
+Create a web-based admin dashboard.
+
+Admin can:
+
+* Add Subject
+* Edit Subject
+* Delete Subject
+* Add Chapter
+* Edit Chapter
+* Delete Chapter
+* Add Video
+* Update YouTube URL
+* Upload Thumbnail
+* Manage Users
+* View Analytics
+
+9. Firebase Integration
+
+Use:
+
+* Firebase Authentication
+* Cloud Firestore
+* Firebase Storage
+* Firebase Analytics
+* Firebase Crashlytics
+* Firebase Cloud Messaging
+
+10. Notifications
+
+Push notifications for:
+
+* New videos
+* New chapters
+* Announcements
+* Subject updates
+
+11. Performance Requirements
+
+* App launch time under 2 seconds
+* Smooth scrolling at 60 FPS
+* Lazy loading
+* Pagination
+* Image caching
+* Error handling
+* Retry mechanisms
+* Network state detection
+
+12. Security
+
+* Secure Firebase rules
+* Input validation
+* Authentication checks
+* Protected admin access
+
+13. UI Requirements
+
+Design should look similar to modern learning platforms:
+
+* Coursera
+* Udemy
+* Khan Academy
+
+Screens:
+
+* Splash Screen
+* Login
+* Signup
+* Home
+* Subject List
+* Chapter List
+* Video List
+* Video Player
+* Search
+* Bookmarks
+* Progress
+* Profile
+* Settings
+
+14. Deliverables
+
+Generate:
+
+* Complete Flutter project
+* Folder structure
+* Database schema
+* Firestore collections
+* API architecture
+* State management architecture
+* Navigation architecture
+* Reusable widgets
+* Complete source code
+* Setup instructions
+* Deployment instructions for Android and iOS
+* Production-ready README
+
+Code must be modular, scalable, maintainable, and suitable for publishing on Google Play Store and Apple App Store.

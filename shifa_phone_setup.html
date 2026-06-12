@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shifa | Mobile App Phone Deployment Guide</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-light: #e0e7ff;
+      --secondary: #06b6d4;
+      --dark: #0f172a;
+      --light: #f8fafc;
+      --grey: #64748b;
+      --border: #e2e8f0;
+      --warning-bg: #fffbeb;
+      --warning-border: #f59e0b;
+      --code-bg: #f1f5f9;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      color: var(--dark);
+      background-color: #f1f5f9;
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    .guide-container {
+      max-width: 850px;
+      background: #ffffff;
+      margin: 0 auto;
+      padding: 50px 45px;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Print control banner */
+    .print-banner {
+      background: var(--primary-light);
+      border: 1px solid var(--primary);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .print-text {
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .print-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+    }
+
+    .print-btn:hover {
+      background: #4338ca;
+      transform: translateY(-1px);
+    }
+
+    /* Header block */
+    .header-block {
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 24px;
+      margin-bottom: 35px;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 30px;
+      color: var(--dark);
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      color: var(--grey);
+    }
+
+    /* Steps Layout */
+    .step-section {
+      margin-bottom: 40px;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .step-number {
+      background: var(--primary);
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      color: var(--dark);
+      font-weight: 700;
+    }
+
+    p {
+      margin-bottom: 14px;
+      font-size: 14.5px;
+      color: #334155;
+    }
+
+    /* Code Block */
+    .code-block {
+      background-color: var(--code-bg);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--primary);
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 13.5px;
+      color: #0f172a;
+      margin: 14px 0;
+      overflow-x: auto;
+    }
+
+    /* Warning box */
+    .info-box {
+      background-color: var(--warning-bg);
+      border-left: 4px solid var(--warning-border);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+      font-size: 14px;
+      color: #78350f;
+    }
+
+    .info-box-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+      font-size: 14.5px;
+      color: #334155;
+    }
+
+    .bold {
+      font-weight: 600;
+      color: var(--dark);
+    }
+
+    /* Print Settings */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .guide-container {
+        box-shadow: none;
+        padding: 0;
+        max-width: 100%;
+      }
+      .print-banner {
+        display: none;
+      }
+      .step-section {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="guide-container">
+    
+    <!-- Print Prompt Banner -->
+    <div class="print-banner">
+      <div class="print-text">
+        📄 Setup guide ready! Click the button to export as a professional PDF.
+      </div>
+      <button class="print-btn" onclick="window.print()">Export as PDF</button>
+    </div>
+
+    <!-- Header Section -->
+    <header class="header-block">
+      <h1>Step-by-Step Device Setup Guide</h1>
+      <div class="subtitle">How to compile and deploy Shifa Mobile App on a physical iOS or Android phone</div>
+    </header>
+
+    <!-- Preparation -->
+    <div class="step-section">
+      <div class="step-header">
+        <div class="step-number">0</div>
+        <h2>Pre-requisites Checklist</h2>
+      </div>
+      <p>
+        Before starting, ensure your host computer has the necessary software installed:
+      </p>
+      <ul>
+        <li><span class="bold">Flutter SDK</span>: Download and extract Flutter from the official website. Ensure the path to the extracted <code style="font-family: monospace;">flutter/bin</code> directory is added to your system's Environment Variables (PATH).</li>
+        <li><span class="bold">Android Studio</span> (for Android phone): Installed to configure SDK components and USB drivers.</li>
+        <li><span class="bold">Xcode</span> (for iPhone - macOS only): Installed from the App Store.</li>
+        <li><span class="bold">USB Connection Cable</span>: To connect the device to your PC.</li>
+      </ul>
+    </div>
+
+    <!-- Step 1: Enable Dev Options -->
+    <div class="step-section">
+      <div class="step-header">
+        <div class="step-number">1</div>
+        <h2>Enable Developer Mode on Your Phone</h2>
+      </div>
+      
+      <p><span class="bold">A. For Android Devices:</span></p>
+      <ol>
+        <li>Open <span class="bold">Settings</span> $\rightarrow$ <span class="bold">About Phone</span> (or <span class="bold">System Info</span>).</li>
+        <li>Locate the <span class="bold">Build Number</span> (sometimes under software details).</li>
+        <li>Tap <span class="bold">Build Number 7 times</span>. You will see a popup saying <em>"You are now a developer!"</em>.</li>
+        <li>Go back to main Settings, find <span class="bold">Developer Options</span> (often under System/Additional Settings), and toggle <span class="bold">USB Debugging</span> to <span class="bold">ON</span>.</li>
+      </ol>
+
+      <p><span class="bold">B. For iOS Devices (iPhones):</span></p>
+      <ol>
+        <li>Open <span class="bold">Settings</span> $\rightarrow$ <span class="bold">Privacy & Security</span>.</li>
+        <li>Scroll down to the bottom to find <span class="bold">Developer Mode</span>.</li>
+        <li>Toggle it <span class="bold">ON</span> and restart your phone as prompted.</li>
+        <li>After restart, unlock the phone and click <span class="bold">"Turn On"</span> when prompted. Enter your passcode.</li>
+      </ol>
+    </div>
+
+    <!-- Step 2: Connection test -->
+    <div class="step-section">
+      <div class="step-header">
+        <div class="step-number">2</div>
+        <h2>Connect the Phone to Your Computer</h2>
+      </div>
+      <p>
+        1. Connect your phone using the USB cable.
+      </p>
+      <p>
+        2. Unlock your phone. A popup will ask to authorize your computer. Check <span class="bold">"Always allow from this computer"</span> and click <span class="bold">Allow</span>.
+      </p>
+      <p>
+        3. Open a terminal (CMD or PowerShell) on your computer and verify that Flutter detects the device:
+      </p>
+      <div class="code-block">
+        flutter devices
+      </div>
+      <p>
+        You should see your phone model in the listed devices (e.g., <em>"SM-G990B • Android 13..."</em>).
+      </p>
+    </div>
+
+    <!-- Step 3: Dependencies -->
+    <div class="step-section">
+      <div class="step-header">
+        <div class="step-number">3</div>
+        <h2>Initialize Project Dependencies</h2>
+      </div>
+      <p>
+        Navigate to the folder where the Shifa mobile code is stored and prepare the project boilerplate:
+      </p>
+      <div class="code-block">
+        cd c:\Projects\shifa\shifa_mobile<br>
+        flutter create .<br>
+        flutter pub get
+      </div>
+      <div class="info-box">
+        <div class="info-box-title">⚠️ Android Gradle Build Warning</div>
+        If this is the first time running a Flutter project on your PC, the command will download Gradle packages. This download happens automatically in the background but may take 2-5 minutes depending on your internet connection.
+      </div>
+    </div>
+
+    <!-- Step 4: Deploy -->
+    <div class="step-section">
+      <div class="step-header">
+        <div class="step-number">4</div>
+        <h2>Deploy the Application to Your Phone</h2>
+      </div>
+      <p>
+        Execute the run command specifying your connected device. If you only have one device connected, simply run:
+      </p>
+      <div class="code-block">
+        flutter run
+      </div>
+      <p>
+        If you have multiple devices connected, specify the device ID:
+      </p>
+      <div class="code-block">
+        flutter run -d [DEVICE_ID]
+      </div>
+      <p>
+        Flutter will build the binary, transfer it, and launch the Shifa app directly on your screen!
+      </p>
+    </div>
+
+    <!-- Step 5: Troubleshooting -->
+    <div class="step-section">
+      <div class="step-header">
+        <div class="step-number">5</div>
+        <h2>Common Troubleshooting Tips</h2>
+      </div>
+      <ul>
+        <li><span class="bold">Device shows "Unauthorized"</span>: Unplug the cable, plug it back in, unlock the phone, and make sure to accept the USB debugging authorization dialog prompt immediately.</li>
+        <li><span class="bold">Flutter command not found</span>: Double-check that you have added the path to your extracted Flutter SDK bin directory to the Environment Variables settings. Run <code style="font-family: monospace;">flutter doctor</code> to run checks.</li>
+        <li><span class="bold">iOS build code-signing errors</span>: iOS devices require a developer certificate. Open the generated <code style="font-family: monospace;">ios/Runner.xcworkspace</code> file in Xcode and select your personal iCloud account in the "Signing & Capabilities" tab.</li>
+      </ul>
+    </div>
+
+  </div>
+
+</body>
+</html>

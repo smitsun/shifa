@@ -1,0 +1,18 @@
+# Dependency directories
+node_modules/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Build outputs
+dist/
+build/
+*.apk
+*.ipa
+
+# System files
+.DS_Store
+Thumbs.db
+*.log
