@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BookOpen, 
   Layers, 
@@ -21,6 +21,27 @@ import {
 import { dbAPI } from './services/db';
 import type { Subject, Chapter, Video, UserProfile, LectureDeck } from './services/mockData';
 
+// Helper functions defined outside the component to prevent recreation on every render
+const getYoutubeId = (url: string) => {
+  const regex = new RegExp('(?:youtube\\.com/(?:[^/]+/.+/(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\\.be/)([^"&?/\\s]{11})', 'i');
+  const match = url.match(regex);
+  return (match && match[1]) ? match[1] : '';
+};
+
+const timeToSeconds = (timeStr: string): number => {
+  const parts = timeStr.split(':').map(Number);
+  if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+    return parts[0] * 60 + parts[1];
+  }
+  return Number(timeStr) || 0;
+};
+
+const secondsToTime = (secs: number): string => {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+};
+
 export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     return (localStorage.getItem('shifa_admin_theme') as 'light' | 'dark') || 'dark';
@@ -28,27 +49,26 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'subjects' | 'chapters' | 'videos' | 'users' | 'lectureDecks'>('dashboard');
   const [previewVideoId, setPreviewVideoId] = useState<string | null>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(true);
-  
-  const getYoutubeId = (url: string) => {
-    const regex = new RegExp('(?:youtube\\.com/(?:[^/]+/.+/(?:v|e(?:mbed)?)/|.*[?&]v=)|youtu\\.be/)([^"&?/\\s]{11})', 'i');
-    const match = url.match(regex);
-    return (match && match[1]) ? match[1] : '';
-  };
 
-  // Timestamp format conversions
-  const timeToSeconds = (timeStr: string): number => {
-    const parts = timeStr.split(':').map(Number);
-    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-      return parts[0] * 60 + parts[1];
-    }
-    return Number(timeStr) || 0;
-  };
+  // Controlled login form state
+  const [loginEmail, setLoginEmail] = useState('admin@shifa.org');
+  const [loginPassword, setLoginPassword] = useState('password');
 
-  const secondsToTime = (secs: number): string => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-  };
+  // Loading state
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Custom alert / error modal state
+  const [errorState, setErrorState] = useState<{
+    isOpen: boolean;
+    message: string;
+  }>({ isOpen: false, message: '' });
+
+  // Delete confirmation modal state
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    type: 'subject' | 'chapter' | 'video' | 'lectureDeck' | null;
+    id: string | null;
+  }>({ isOpen: false, type: null, id: null });
   
   // Data State
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -82,38 +102,67 @@ export default function App() {
   }>({ title: '', description: '', youtubeUrl: '', duration: '', subjectId: '', chapterId: '', jumpPoints: [] });
   const [lectureDeckForm, setLectureDeckForm] = useState({ title: '', description: '', subjectId: '', videoIds: [] as string[] });
 
-  // Load data helper
-  const loadAllData = async () => {
-    const s = await dbAPI.getSubjects();
-    const c = await dbAPI.getChapters();
-    const v = await dbAPI.getVideos();
-    const u = await dbAPI.getUsers();
-    const ld = await dbAPI.getLectureDecks();
-    
-    setSubjects(s);
-    setChapters(c);
-    setVideos(v);
-    setLectureDecks(ld);
-    setUsers(u);
+  // Flag to guarantee loadAllData initial selection logic runs exactly once on mount
+  const isInitializedRef = React.useRef(false);
 
-    if (s.length > 0) {
-      const initialSubId = selectedSubjectId || s[0].id;
-      if (!selectedSubjectId) {
-        setSelectedSubjectId(initialSubId);
-      }
-      const filtered = c.filter(chap => chap.subjectId === initialSubId);
-      if (filtered.length > 0 && !selectedChapterId) {
+  // Load data helper - memoized with useCallback
+  const loadAllData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const s = await dbAPI.getSubjects();
+      const c = await dbAPI.getChapters();
+      const v = await dbAPI.getVideos();
+      const u = await dbAPI.getUsers();
+      const ld = await dbAPI.getLectureDecks();
+      
+      setSubjects(s);
+      setChapters(c);
+      setVideos(v);
+      setLectureDecks(ld);
+      setUsers(u);
+    } catch (err) {
+      console.error("Failed to load data: ", err);
+      setErrorState({ isOpen: true, message: "Failed to synchronize data with local database storage." });
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Separate initialization logic from loadAllData, running exactly once
+  useEffect(() => {
+    if (!isInitializedRef.current && subjects.length > 0) {
+      isInitializedRef.current = true;
+      const initialSubId = subjects[0].id;
+      setSelectedSubjectId(initialSubId);
+      
+      const filtered = chapters.filter(chap => chap.subjectId === initialSubId);
+      if (filtered.length > 0) {
         setSelectedChapterId(filtered[0].id);
       }
     }
-  };
+  }, [subjects, chapters]);
+
+  // Keep selectedChapterId synchronized with selectedSubjectId
+  useEffect(() => {
+    if (selectedSubjectId) {
+      const filtered = chapters.filter(c => c.subjectId === selectedSubjectId);
+      if (filtered.length > 0) {
+        const exists = filtered.some(c => c.id === selectedChapterId);
+        if (!exists) {
+          setSelectedChapterId(filtered[0].id);
+        }
+      } else {
+        setSelectedChapterId('');
+      }
+    } else {
+      setSelectedChapterId('');
+    }
+  }, [selectedSubjectId, chapters, selectedChapterId]);
 
   // Init Data
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadAllData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadAllData]);
 
   // Sync Theme
   useEffect(() => {
@@ -181,9 +230,13 @@ export default function App() {
   // Handle Form Submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       if (modalType === 'subject') {
-        await dbAPI.saveSubject(subjectForm);
+        await dbAPI.saveSubject({
+          ...subjectForm,
+          id: modalAction === 'edit' ? editId : subjectForm.id
+        });
       } else if (modalType === 'chapter') {
         await dbAPI.saveChapter({
           ...(modalAction === 'edit' ? { id: editId } : {}),
@@ -215,12 +268,28 @@ export default function App() {
       await loadAllData();
     } catch (err) {
       console.error("Error saving content: ", err);
+      setErrorState({ isOpen: true, message: `Failed to save changes to the database. Please try again.` });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Handle Deletion
-  const handleDelete = async (type: 'subject' | 'chapter' | 'video' | 'lectureDeck', id: string) => {
-    if (window.confirm(`Are you sure you want to delete this ${type}? This action cannot be undone.`)) {
+  // Handle Deletion Trigger
+  const handleDelete = (type: 'subject' | 'chapter' | 'video' | 'lectureDeck', id: string) => {
+    setDeleteConfirm({
+      isOpen: true,
+      type,
+      id
+    });
+  };
+
+  // Handle Deletion Confirmation
+  const handleConfirmDelete = async () => {
+    const { type, id } = deleteConfirm;
+    if (!type || !id) return;
+    
+    setIsLoading(true);
+    try {
       if (type === 'subject') {
         await dbAPI.deleteSubject(id);
       } else if (type === 'chapter') {
@@ -231,14 +300,28 @@ export default function App() {
         await dbAPI.deleteLectureDeck(id);
       }
       await loadAllData();
+      setDeleteConfirm({ isOpen: false, type: null, id: null });
+    } catch (err) {
+      console.error("Failed to delete item: ", err);
+      setErrorState({ isOpen: true, message: `Failed to delete ${type}. Please try again.` });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Toggle User Role
   const toggleUserRole = async (uid: string, currentRole: 'student' | 'admin') => {
     const targetRole = currentRole === 'admin' ? 'student' : 'admin';
-    await dbAPI.updateUserRole(uid, targetRole);
-    await loadAllData();
+    setIsLoading(true);
+    try {
+      await dbAPI.updateUserRole(uid, targetRole);
+      await loadAllData();
+    } catch (err) {
+      console.error("Failed to update user role: ", err);
+      setErrorState({ isOpen: true, message: "Failed to update user role. Please try again." });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Helper stats
@@ -268,11 +351,23 @@ export default function App() {
           <form onSubmit={(e) => { e.preventDefault(); setIsLoggedIn(true); }} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Administrator Email</label>
-              <input type="email" required className="form-control" defaultValue="admin@shifa.org" />
+              <input 
+                type="email" 
+                required 
+                className="form-control" 
+                value={loginEmail} 
+                onChange={(e) => setLoginEmail(e.target.value)} 
+              />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
               <label>Password</label>
-              <input type="password" required className="form-control" defaultValue="password" />
+              <input 
+                type="password" 
+                required 
+                className="form-control" 
+                value={loginPassword} 
+                onChange={(e) => setLoginPassword(e.target.value)} 
+              />
             </div>
             <button type="submit" className="primary-btn" style={{ justifyContent: 'center', width: '100%', marginTop: '10px', padding: '12px' }}>
               Sign In to System
@@ -593,7 +688,7 @@ export default function App() {
                           <td><code style={{ fontSize: '13px', color: 'var(--accent-primary)', fontWeight: 600 }}>{sub.id}</code></td>
                           <td><span style={{ fontWeight: 600 }}>{sub.title}</span></td>
                           <td style={{ maxWidth: '300px', color: 'var(--text-secondary)', fontSize: '13px' }}>{sub.description}</td>
-                          <td>{sub.chaptersCount} chapters</td>
+                          <td>{chapters.filter(c => c.subjectId === sub.id).length} chapters</td>
                           <td>
                             <div className="action-buttons-group">
                               <button 
@@ -688,7 +783,7 @@ export default function App() {
                             <td><code style={{ fontSize: '13px', color: 'var(--accent-primary)', fontWeight: 600 }}>{chap.id}</code></td>
                             <td><span style={{ fontWeight: 600 }}>{chap.title}</span></td>
                             <td style={{ maxWidth: '350px', color: 'var(--text-secondary)', fontSize: '13px' }}>{chap.description}</td>
-                            <td>{chap.videosCount} video lectures</td>
+                            <td>{videos.filter(v => v.chapterId === chap.id).length} video lectures</td>
                             <td>
                               <div className="action-buttons-group">
                                 <button 
@@ -1468,8 +1563,8 @@ export default function App() {
 
       {/* Inline Video Preview Modal */}
       {previewVideoId && (
-        <div className="modal-overlay" onClick={() => setPreviewVideoId(null)}>
-          <div className="modal-content" style={{ width: '640px', maxWidth: '95%' }} onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setPreviewVideoId(null); }}>
+          <div className="modal-content" style={{ width: '640px', maxWidth: '95%' }}>
             <div className="modal-header">
               <h3>Lecture Video Inline Player</h3>
               <button className="close-btn" onClick={() => setPreviewVideoId(null)}>
@@ -1489,6 +1584,69 @@ export default function App() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Custom Delete Confirmation Modal */}
+      {deleteConfirm.isOpen && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setDeleteConfirm({ isOpen: false, type: null, id: null }); }}>
+          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '32px' }}>
+            <div className="danger-modal-icon">
+              <Trash2 size={28} />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Confirm Delete</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.5 }}>
+              Are you sure you want to delete this {deleteConfirm.type}? This action is permanent and cannot be undone.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button 
+                className="secondary-btn" 
+                style={{ padding: '10px 20px', minWidth: '100px' }}
+                onClick={() => setDeleteConfirm({ isOpen: false, type: null, id: null })}
+              >
+                Cancel
+              </button>
+              <button 
+                className="primary-btn" 
+                style={{ backgroundColor: 'var(--accent-danger)', padding: '10px 20px', minWidth: '100px', display: 'inline-flex', justifyContent: 'center' }}
+                onClick={handleConfirmDelete}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Error Modal */}
+      {errorState.isOpen && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setErrorState({ isOpen: false, message: '' }); }}>
+          <div className="modal-content" style={{ width: '400px', textAlign: 'center', padding: '32px' }}>
+            <div className="danger-modal-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-danger)' }}>
+              <X size={28} />
+            </div>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>System Alert</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.5 }}>
+              {errorState.message}
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <button 
+                className="primary-btn" 
+                style={{ padding: '10px 24px' }}
+                onClick={() => setErrorState({ isOpen: false, message: '' })}
+              >
+                Acknowledge
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Glassmorphic Loading Spinner Overlay */}
+      {isLoading && (
+        <div className="loading-overlay">
+          <div className="spinner"></div>
+          <span className="loading-text">Processing Request...</span>
         </div>
       )}
     </div>
