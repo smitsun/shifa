@@ -85,27 +85,23 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   // App Icon / Logo
                   Center(
                     child: Container(
-                      width: 70,
-                      height: 70,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: theme.colorScheme.primary.withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
+                            color: theme.colorScheme.primary.withOpacity(0.15),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
                           )
                         ],
                       ),
-                      child: const Icon(
-                        Icons.local_hospital_rounded,
-                        color: Colors.white,
-                        size: 38,
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        height: 80,
+                        width: 80,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
@@ -114,7 +110,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                   // App Title
                   Center(
                     child: Text(
-                      'Shifa Education',
+                      'Shifa Care',
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontSize: 28,
                         letterSpacing: -0.5,

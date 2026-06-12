@@ -31,21 +31,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.black12, width: 0.5),
               ),
-              child: Icon(
-                Icons.healing_rounded,
-                color: Theme.of(context).colorScheme.primary,
-                size: 20,
+              child: Image.asset(
+                'assets/images/logo.png',
+                height: 24,
+                width: 24,
+                fit: BoxFit.contain,
               ),
             ),
             const SizedBox(width: 10),
             Text(
               _currentIndex == 0
-                  ? 'Shifa Learning'
+                  ? 'Shifa Care'
                   : (_currentIndex == 1
                       ? 'Search Library'
                       : (_currentIndex == 2 ? 'Bookmarks' : 'Student Profile')),
@@ -119,7 +121,7 @@ class _DashboardTab extends ConsumerWidget {
         children: [
           // Greeting Banner
           Text(
-            user != null ? 'Welcome Back, ${user.displayName}' : 'Welcome to Shifa',
+            user != null ? 'Welcome Back, ${user.displayName}' : 'Welcome to Shifa Care',
             style: theme.textTheme.titleLarge?.copyWith(fontSize: 24),
           ),
           const SizedBox(height: 4),
