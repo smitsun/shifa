@@ -83,6 +83,17 @@ class AuthNotifier extends StateNotifier<AsyncValue<AppUser?>> {
     await _repository.logout();
     state = const AsyncValue.data(null);
   }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    state = const AsyncValue.loading();
+    try {
+      await _repository.sendPasswordResetEmail(email);
+      state = const AsyncValue.data(null);
+    } catch (e, stack) {
+      state = AsyncValue.error(e, stack);
+      rethrow;
+    }
+  }
 }
 
 final authStateProvider = StateNotifierProvider<AuthNotifier, AsyncValue<AppUser?>>((ref) {

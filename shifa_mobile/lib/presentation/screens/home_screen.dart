@@ -199,7 +199,7 @@ class _DashboardTab extends ConsumerWidget {
 
           // Featured Courses / Subjects Title
           Row(
-            mainAxisAlignment: MainAxisAlignment.between,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Medical Subjects', style: theme.textTheme.titleMedium),
               Text(
@@ -435,7 +435,7 @@ class _BookmarksTab extends ConsumerWidget {
             itemBuilder: (context, index) {
               final b = bookmarks[index];
               return Card(
-                margin: const EdgeInsets.bottom(12),
+                margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
                   title: Text(
                     b.itemId.replaceAll('_', ' ').toUpperCase(),
