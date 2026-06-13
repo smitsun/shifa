@@ -925,16 +925,28 @@ export default function App() {
                               </div>
                             </td>
                             <td>
-                              <button 
-                                onClick={() => {
-                                  const ytId = getYoutubeId(vid.youtubeUrl);
-                                  if (ytId) setPreviewVideoId(ytId);
-                                }}
-                                style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
-                              >
-                                <Play size={14} fill="var(--accent-primary)" />
-                                Play Inline
-                              </button>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-start' }}>
+                                <button 
+                                  onClick={() => {
+                                    const ytId = getYoutubeId(vid.youtubeUrl);
+                                    if (ytId) setPreviewVideoId(ytId);
+                                  }}
+                                  style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--accent-primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+                                >
+                                  <Play size={14} fill="var(--accent-primary)" />
+                                  Play Inline
+                                </button>
+                                <a 
+                                  href={vid.youtubeUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none', fontWeight: 500 }}
+                                  onMouseOver={(e) => e.currentTarget.style.color = 'var(--accent-primary)'}
+                                  onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                                >
+                                  Open on YouTube ↗
+                                </a>
+                              </div>
                             </td>
                             <td>{new Date(vid.createdAt).toLocaleDateString(undefined, { dateStyle: 'short' })}</td>
                             <td>
