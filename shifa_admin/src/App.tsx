@@ -1180,22 +1180,20 @@ export default function App() {
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="subDescInput">Detailed Description</label>
+                      <label htmlFor="subDescInput">Detailed Description (Optional)</label>
                       <textarea 
                         id="subDescInput"
                         className="form-control" 
-                        required
                         value={subjectForm.description}
                         onChange={(e) => setSubjectForm({ ...subjectForm, description: e.target.value })}
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="subThumbnailInput">Thumbnail Image URL</label>
+                      <label htmlFor="subThumbnailInput">Thumbnail Image URL (Optional)</label>
                       <input 
                         id="subThumbnailInput"
                         type="url" 
                         className="form-control" 
-                        required
                         value={subjectForm.thumbnailUrl}
                         onChange={(e) => setSubjectForm({ ...subjectForm, thumbnailUrl: e.target.value })}
                       />
@@ -1233,11 +1231,10 @@ export default function App() {
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="chapDescInput">Description / Learning Objectives</label>
+                      <label htmlFor="chapDescInput">Description / Learning Objectives (Optional)</label>
                       <textarea 
                         id="chapDescInput"
                         className="form-control" 
-                        required
                         value={chapterForm.description}
                         onChange={(e) => setChapterForm({ ...chapterForm, description: e.target.value })}
                       />
@@ -1301,22 +1298,20 @@ export default function App() {
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="vidDescInput">Video Description</label>
+                      <label htmlFor="vidDescInput">Video Description (Optional)</label>
                       <textarea 
                         id="vidDescInput"
                         className="form-control" 
-                        required
                         value={videoForm.description}
                         onChange={(e) => setVideoForm({ ...videoForm, description: e.target.value })}
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="vidDurationInput">Duration (MM:SS, e.g. "12:35")</label>
+                      <label htmlFor="vidDurationInput">Duration (Optional, MM:SS, e.g. "12:35")</label>
                       <input 
                         id="vidDurationInput"
                         type="text" 
                         className="form-control" 
-                        required
                         placeholder="e.g. 15:45"
                         value={videoForm.duration}
                         onChange={(e) => setVideoForm({ ...videoForm, duration: e.target.value })}
@@ -1414,11 +1409,10 @@ export default function App() {
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="deckDescInput">Description / Presenter Notes</label>
+                      <label htmlFor="deckDescInput">Description / Presenter Notes (Optional)</label>
                       <textarea 
                         id="deckDescInput"
                         className="form-control" 
-                        required
                         placeholder="Provide details about the presentation topics..."
                         value={lectureDeckForm.description}
                         onChange={(e) => setLectureDeckForm({ ...lectureDeckForm, description: e.target.value })}
